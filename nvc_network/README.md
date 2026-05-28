@@ -2,6 +2,9 @@
 
 AI가 프로젝트 컨텍스트를 직접 읽을 수 있도록 공개된 문서 저장소입니다.
 
+https://raw.githubusercontent.com/AINVC/nvc_public/main/nvc_network/README.md
+
+
 ---
 
 ## 📁 nvc_network — 뉴비전 교회 네트워크 관리 프로젝트
