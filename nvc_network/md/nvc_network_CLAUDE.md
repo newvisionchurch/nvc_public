@@ -6,12 +6,11 @@
 NVC_Network/
 ├── elk/                  ← NAS ELK Stack (compose.yaml + logstash.conf)
 │   ├── README.md         ← ELK 상세 문서 (V27 베이스라인, RCA 모델, Kibana 가이드)
-│   ├── MEMO.md           ← NAS 운영 명령어
 │   ├── compose.yaml
 │   ├── logstash/pipeline/logstash.conf
 │   └── docs/             ← ELK 세부 문서
 ├── gui/                  ← Python/Tkinter 관리 GUI
-│   ├── DESIGN.md         ← GUI 설계 구상서 (초기 설계부터 현재 구현까지 이력)
+│   ├── DESIGN.md         ← GUI 설계 구상서 및 구현 이력
 │   ├── MANUAL.md         ← 사용자 매뉴얼
 │   ├── README.md         ← 기술 퀵스타트
 │   ├── main.py           ← GUI 진입점 (NetworkGuiApp 클래스)
@@ -19,7 +18,12 @@ NVC_Network/
 │   └── config/           ← 런타임 설정 (일부 gitignore)
 ├── efg/                  ← EFG 참조 문서 (GUI 코드가 직접 참조)
 │   └── EFG.md            ← EFG 참조 (경로 변경 금지)
-└── codex/                ← Codex 시대 백업 (추후 삭제 예정)
+└── runtime/              ← 런타임 데이터 (git 제외)
+    ├── logs/raw/         ← NAS 동기화 JSONL 캐시
+    ├── exports/          ← Log Export 결과
+    ├── mca_dumps/        ← AP Remote mca-dump 원본
+    ├── api_probe/        ← EFG API GET 응답 JSON
+    └── operations.log
 ```
 
 ## 작업 전 필수 확인
@@ -34,7 +38,8 @@ NVC_Network/
 1. `gui/modules/models.py` — 핵심 데이터 모델
 2. `gui/main.py` — 메인 GUI 클래스 (NetworkGuiApp)
 3. `gui/config/app_config.json` — 앱 설정 (stuck_thresholds 포함)
-4. 상세 설계 이력 필요 시: `gui/DESIGN.md`
+4. `gui/modules/unifi_client.py` — UniFi API 클라이언트
+5. 상세 설계 이력 필요 시: `gui/DESIGN.md`
 
 ## 핵심 제약사항
 
@@ -62,42 +67,30 @@ NVC_Network/
 - 인덱스: `unifi-network-v27-{ap,low,noise}-*`
 - JSONL 출력: NAS `logstash/outputs/{ap,low,noise}/YYYY/M/D/partNNNN`
 
-## GUI 현재 상태 (V1 — 기능 완성)
-
-### 인증 흐름
-```
-VPN 연결 확인 (192.168.11.1:22) → 실패 시 종료
-    ↓
-개인 ID + bcrypt 비밀번호
-    ↓
-TOTP 6자리 (Google Authenticator / Authy, 30초 갱신)
-    ↓
-역할(Role) 로딩 → 권한에 따라 탭/버튼 활성화
-    ↓
-NAS / EFG / AP SSH 접속 (Windows Credential Manager)
-```
+## GUI 현재 상태 (V1)
 
 ### 탭 구성 및 권한
+
 | 탭 | 설명 | 필요 권한 |
 |---|---|---|
-| Log 동기화 | NAS JSONL → PC 캐시 동기화 | `can_sync_nas` |
-| AP ELK Log | ELK 로그 기반 Stuck 집계·상세 분석 | 모든 사용자 |
-| AP Remote | AP SSH 직접 스캔 — mca-dump 진단 | 모든 사용자 |
-| EFG Remote | EFG 시스템 대시보드 | `can_view_efg_tab` |
+| AP Status | AP SSH 스캔(mca-dump/logread) + ELK Stuck 집계 + AP Reset | 모든 사용자 |
+| EFG Remote > EFG SSH | EFG 시스템 대시보드 (SSH) | `can_view_efg_tab` |
+| EFG Remote > EFG API | UniFi Controller API 탐색기 | `can_view_efg_tab` |
 | Log Export | 조건별 로그 필터·파일 저장 | `can_export` |
+| Sync | NAS JSONL → PC 캐시 동기화 | `can_sync_nas` |
+| Settings | API/앱 설정, AP 등록수, 정렬, mca 덤프 | 모든 사용자 |
 | 사용자 관리 | 계정·권한 관리 | `can_manage_users` (admin) |
-| EFG 참조 | EFG.md 읽기 전용 표시 | `can_view_efg_tab` |
 
 ### 역할 및 권한
+
 | 역할 | 기본 권한 |
 |------|----------|
 | `admin` | 모든 기능 + 사용자 관리 |
-| `operator` | Log 동기화, AP ELK Log, AP Remote, EFG Remote, Export, AP Reset |
-| `viewer` | AP ELK Log, AP Remote (조회), EFG Remote, Export (동기화·Reset 불가) |
-
-권한은 역할 기본값 외에 per-user 단위로 admin 화면에서 on/off 가능.
+| `operator` | Sync, AP Status, EFG Remote, Log Export, AP Reset |
+| `viewer` | AP Status(조회), EFG Remote, Log Export (Reset·Sync 불가) |
 
 ### 모듈 구조
+
 | 모듈 | 역할 |
 |------|------|
 | `auth.py` | bcrypt 로그인 + TOTP 2FA |
@@ -105,9 +98,10 @@ NAS / EFG / AP SSH 접속 (Windows Credential Manager)
 | `nas_sync.py` | paramiko SFTP — NAS JSONL 로컬 캐시 동기화 |
 | `ap_count.py` | 날짜 범위별 AP Stuck 이벤트 집계 |
 | `ap_detail.py` | 문제 AP 상세 분석, Stuck 유형 분류 |
-| `ap_reset.py` | SSH 원격 reboot — EFG relay 경유 (run_ssh_via_relay) |
+| `ap_reset.py` | SSH 원격 reboot — EFG relay 경유 |
 | `ap_remote.py` | AP SSH 스캔 — mca-dump 파싱 + logread 진단 |
 | `efg_remote.py` | EFG 대시보드 — system/네트워크/트래픽/ARP 조회 |
+| `unifi_client.py` | UniFi Local API 클라이언트 (New API Key / Legacy) |
 | `log_export.py` | 조건별 로그 필터링 후 파일 저장 |
 | `ap_inventory.py` | AP 목록 관리 (ap_inventory.json 기반) |
 | `local_storage.py` | 런타임 폴더 생성·관리 |
@@ -116,10 +110,12 @@ NAS / EFG / AP SSH 접속 (Windows Credential Manager)
 | `ssh_client.py` | paramiko 공통 — 패스워드/키 인증, PTY, relay |
 | `models.py` | 핵심 데이터 모델 |
 
-### AP ELK Log 탭 — Stuck 판단 기준
+### AP Status 탭 — Stuck 판단 기준
+
 ```
 event.problem_class: ap_stuck (channel_invalid, vap_timeout, radio_reset)
 ```
+
 | Stuck 카운트 | 상태 색상 |
 |-------------|----------|
 | 0 | Healthy (Green) |
@@ -127,57 +123,84 @@ event.problem_class: ap_stuck (channel_invalid, vap_timeout, radio_reset)
 | 3~9 | Suspect (Orange) |
 | 10+ | Critical (Red) |
 
-### AP Remote 탭 — 진단 컬럼 (mca-dump + logread)
+### AP Status 탭 — 진단 컬럼 (mca-dump + logread)
+
 | 컬럼 | 소스 | 설명 |
 |------|------|------|
-| ELK Stuck | ELK Log 캐시 | ELK 기반 Stuck 이벤트 수 (ELK Log Stuck Count 실행 후 동기화) |
-| 로그오류 | `logread \| grep -cE` | 현재 부팅 세션 내 stuck/ath_reset/vap timeout 패턴 수 |
+| ELK Stuck | ELK Log 캐시 | ELK 기반 Stuck 이벤트 수 |
+| 로그오류 | `logread \| grep -cE` | 현재 부팅 세션 내 오류 패턴 수 |
 | 재시작2G/5G | `athstats.ast_ath_reset` | 드라이버 레벨 무선 리셋 누적 |
 | VAP지연2G/5G | `athstats.timeout_waiting_for_vap_cnt` | VAP 초기화 타임아웃 누적 |
-| CU2G%/CU5G% | `athstats.cu_total` | 채널 이용률 (Channel Utilization) |
+| CU2G%/CU5G% | `athstats.cu_total` | 채널 이용률 |
 | 2.4G Cli / 5G Cli | `radio_table[*].num_sta` | 연결 클라이언트 수 |
+| Ch 2G/5G/6G | UniFi API | 채널 번호 (API 연동 시) |
+| BW 2G/5G/6G | UniFi API | 채널 폭 MHz |
 | 응답(ms) | SSH 응답 시간 | mca-dump 전체 왕복 시간 |
 
 임계값 초과 시 셀 앞에 `⚠` 표시. `⚠ 설정` 버튼으로 임계값 변경 → `app_config.json`의 `stuck_thresholds`에 저장.
 
 ### AP Reset — EFG Relay 구조
+
 ```
 GUI (paramiko) → EFG (OpenSSH) → sshpass → AP (Dropbear)
 ```
+
 - `run_ssh_via_relay()` 사용
 - EFG에 sshpass 설치 필요
 - AP에 직접 paramiko 패스워드 인증 불가 (Dropbear 호환성 문제) → relay 필수
 
-### EFG Remote 탭 — 대시보드
+### EFG SSH 탭 — 대시보드
+
 `fetch_efg_dashboard()` 단일 SSH 세션으로 `##MARKER##` 구분 수집:
 - 시스템 정보 카드: hostname, uptime, kernel, loadavg, free -m
 - 네트워크 경로 카드: ip route show
-- 인터페이스 테이블: ip addr show (이름, IP/prefix, MAC, 상태)
-- 트래픽 통계 테이블: /proc/net/dev (수신/송신 MB, 패킷, 오류)
-- ARP 테이블: arp -n (IP, MAC, 인터페이스, 상태)
-- 모든 테이블 컬럼 클릭 정렬 지원 (↑/↓ 표시)
+- 인터페이스 테이블: ip addr show
+- 트래픽 통계 테이블: /proc/net/dev
+- ARP 테이블: arp -n
+- 모든 테이블 컬럼 클릭 정렬 지원
+
+### EFG API 탭 — UniFi Controller 탐색기
+
+UniFi Local Network API를 read-only GET으로 탐색. AP Stuck 분석 보조 용도.
+
+**레이아웃**: 좌(30%) / 우(70%) 분할
+
+**좌측 패널**:
+- API 연결 상태 / Site 정보 / 장비 현황
+- WLAN (wlanconf) — SSID 드롭다운 선택 시 상세 카드 표시 (networkconf/usergroup 연동)
+- 전체 장비 목록 — AP / SW / EFG 라디오 버튼 필터
+
+**우측 패널**:
+- Preset 드롭다운 (20개) + GET 버튼
+- AP 선택 드롭다운 (device detail/stats preset 시 표시)
+- JSON 응답 뷰어 (캐시 자동 로드)
+
+**전체 Preset GET**:
+- 20개 preset 순서대로 실행 → 파일 저장 → 좌측 패널 자동 갱신
+- 저장 경로: `runtime/api_probe/YYYYMMDD_HHMMSS_<preset_name>.json`
+
+**API 인증**: Settings 탭 → UniFi API 설정 → API Key (keyring 보관)
+
+**컨트롤러**: UniFi Network Application 10.3.58 (Dream Machine Enterprise, UDMENT)
+- New API (`/proxy/network/integration/v1/`) — API Key 인증
+- Legacy API (`/proxy/network/api/s/default/`) — API Key 인증
+- `stat/event`, `stat/device`, `rest/device`, `stat/sta` 등 일부 Legacy endpoint 미지원
 
 ### SSH 접속 구조
+
 | 대상 | 방식 | PTY |
 |------|------|-----|
 | NAS (Synology) | paramiko SSHClient, 키 인증 | 불필요 |
-| EFG (OpenSSH) | paramiko Transport, 패스워드 인증 | 불필요 (use_pty=False) |
-| AP (Dropbear) 직접 | paramiko Transport, 패스워드 인증 | **필요** (Dropbear 요구) |
-| AP via EFG relay | EFG에서 sshpass+ssh, ssh -T | 불필요 (OpenSSH 경유) |
+| EFG (OpenSSH) | paramiko Transport, 패스워드 인증 | 불필요 |
+| AP (Dropbear) 직접 | paramiko Transport, 패스워드 인증 | **필요** |
+| AP via EFG relay | EFG에서 sshpass+ssh | 불필요 |
 
 ### 주요 설정 파일
+
 | 파일 | 내용 | git 포함 |
 |------|------|---------|
-| `config/app_config.json` | 앱 경로, NAS 설정, VPN 체크, `stuck_thresholds` | ✅ |
+| `config/app_config.json` | 앱 경로, NAS 설정, VPN 체크, `stuck_thresholds`, `unifi_api` | ✅ |
 | `config/ap_inventory.json` | AP 29대 목록 (이름, IP, 모델, 위치) | ✅ |
 | `config/ssh_targets.example.json` | SSH 설정 예제 | ✅ |
 | `config/users.json` | 사용자 계정 (bcrypt 해시, TOTP secret) | ❌ |
 | `config/ssh_targets.json` | NAS/EFG/AP SSH 접속 정보 | ❌ |
-
-### V2 이후 확장 계획
-- Google OAuth 로그인 (Workspace 이메일 기반)
-- Kibana / Elasticsearch API 직접 조회
-- AP 상태 실시간 모니터링
-- EFG system_issue 자동 감지 및 알림
-- AP 리셋 후 복구 여부 자동 확인
-- Daily Report 자동 생성
