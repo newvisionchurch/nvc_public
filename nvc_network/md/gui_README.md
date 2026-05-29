@@ -1,7 +1,7 @@
 # NVC Network GUI
 
-> **GUI Version 0.1** — 05/29/2026  
-> 뉴비전 교회 네트워크 관리 도구 — Python + Tkinter 기반 로컬 GUI
+GUI Version 0.1 — 05/29/2026  
+뉴비전 교회 네트워크 관리 도구 — Python + Tkinter 기반 로컬 GUI
 
 ---
 
