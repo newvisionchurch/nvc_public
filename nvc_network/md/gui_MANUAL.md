@@ -1,6 +1,6 @@
 # NVC Network GUI — 사용자 매뉴얼
 
-GUI Version 0.1 — 05/29/2026  
+GUI Version 0.2 — 05/29/2026  
 대상: 뉴비전 교회 네트워크 운영팀
 
 ---
