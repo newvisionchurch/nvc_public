@@ -44,7 +44,7 @@ gui/
 │   ├── ap_count.py          ← AP Stuck 이벤트 집계
 │   ├── ap_detail.py         ← 문제 AP 상세 분석
 │   ├── ap_reset.py          ← AP 원격 reboot (EFG relay 경유)
-│   ├── ap_remote.py         ← AP SSH 스캔 (mca-dump + logread 진단)
+│   ├── ap_remote.py         ← AP SSH 스캔 (mca-dump + logread + ResetScore)
 │   ├── efg_remote.py        ← EFG 시스템 대시보드 조회
 │   ├── unifi_client.py      ← UniFi Local API 클라이언트
 │   ├── log_export.py        ← 조건별 로그 export
@@ -56,7 +56,7 @@ gui/
 │   ├── font_utils.py        ← UI 폰트 로드/적용
 │   └── models.py            ← 핵심 데이터 모델
 ├── config/
-│   ├── app_config.json      ← 앱 경로, NAS 설정, stuck_thresholds, unifi_api (git 포함)
+│   ├── app_config.json      ← 앱 경로, NAS 설정, stuck_thresholds, score_params, unifi_api (git 포함)
 │   ├── ap_inventory.json    ← AP 29대 목록 (git 포함)
 │   ├── ssh_targets.example.json  ← SSH 설정 예제 (git 포함)
 │   ├── ssh_targets.json     ← 실제 SSH 접속 정보 (git 제외)
@@ -72,7 +72,7 @@ gui/
 
 | 탭 | 기능 요약 | 필요 권한 |
 |---|---|---|
-| **AP Status** | AP SSH 스캔(mca-dump/logread) + ELK Stuck 집계 + AP Reset | 모든 사용자 |
+| **AP Status** | AP SSH 스캔(mca-dump/logread) + ELK Stuck 집계 + ResetScore 분류 + AP Reset | 모든 사용자 |
 | **EFG Remote > EFG SSH** | EFG 시스템·네트워크·트래픽·ARP 대시보드 | `can_view_efg_tab` |
 | **EFG Remote > EFG API** | UniFi Controller API 탐색기 (read-only GET) | `can_view_efg_tab` |
 | **Log Export** | 날짜·AP·유형·키워드 조건 로그 파일 저장 | `can_export` |
@@ -88,8 +88,11 @@ AP와 SSH 연결(EFG relay 경유)하여 `mca-dump` + `logread` 실행:
 
 | 컬럼 | 소스 | 의미 |
 |------|------|------|
+| 분류 | ResetScore | 색상 순위값 (정렬용) |
+| 점수 | ResetScore | 합산 점수 |
 | ELK Stuck | ELK Log 캐시 | ELK 기반 누적 Stuck 수 |
-| 로그오류 | logread grep | 현재 부팅 중 오류 패턴 수 |
+| 로그오류 | logread grep | 현재 부팅 중 실제 오류 건수 |
+| DevReset | logread WAL_DBGID_DEV_RESET | AC Pro fw 6.8.x 버그 횟수 |
 | 재시작2G/5G | `ast_ath_reset` | 드라이버 무선 리셋 횟수 |
 | VAP지연2G/5G | `timeout_waiting_for_vap_cnt` | VAP 초기화 타임아웃 횟수 |
 | CU2G%/CU5G% | `cu_total` | 채널 이용률 |
@@ -98,7 +101,38 @@ AP와 SSH 연결(EFG relay 경유)하여 `mca-dump` + `logread` 실행:
 | BW 2G/5G/6G | UniFi API | 채널 폭 MHz |
 | 응답(ms) | SSH 응답 시간 | mca-dump 왕복 시간 |
 
-임계값 초과 셀에 `⚠` 표시. `⚠ 설정` 버튼으로 변경 가능 (`app_config.json` 저장).
+임계값 초과 셀에 `⚠` 표시. `경고 설정` 버튼으로 변경 가능 (`app_config.json` 저장).
+
+**AC Pro DevReset 강조**: AC Pro + DevReset > 0 + 재시작5G > 0 세 조건 AND 충족 시 DevReset 셀을 `▶ N` 빨간 Bold로 표시 (경고 설정에서 ON/OFF).
+
+---
+
+## AP Reset 후보 분류 (ResetScore)
+
+`AP Reset 후보 분류` 버튼으로 각 AP에 점수를 계산해 행 색상 지정.
+
+| 색상 | 의미 | 조건 |
+|------|------|------|
+| 🔴 빨강 | Reset 후보 | 합산 ≥ 60 AND reset_evidence |
+| 🟡 노랑 | 관찰 필요 | 합산 ≥ 20 |
+| 🟢 초록 | 정상 | 합산 < 20 |
+| ⬜ 회색 | 미조회 | SSH 미조회 |
+
+**주요 점수 소스** (기본값 — 실데이터 기반 2026-05-29 재조정):
+
+| 소스 | 구간 | 점수 |
+|------|------|------|
+| ELK Stuck | 500~1999 / 2000~4999 / ≥5000 | +15 / +30 / +50 |
+| 로그오류 | 1~2 / 3~9 / ≥10건 | +30 / +40 / +50 |
+| 재시작5G/day (AC HD) | 100~299 / 300~599 / ≥600 | +10 / +20 / +30 |
+| VAP 타임아웃 | 1~20 / ≥21 | +15 / +30 |
+| 채널 이용률 | 70~84% / ≥85% | +10 / +15 |
+
+**AC Pro 예외**: DevReset(fw_bug_count) 및 재시작5G(DevReset>0 AND 재시작5G>0) 점수 제외 — fw 6.8.x 칩셋 구조적 버그.  
+`AC Pro 선택` 버튼으로 AC Pro 전체를 Reset 대상으로 일괄 지정.
+
+`분류규칙` 버튼: 전체 점수 조건 팝업 확인.  
+`분류설정` 버튼: 임계값/점수 수정 후 저장.
 
 ---
 
