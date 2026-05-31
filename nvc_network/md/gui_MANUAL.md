@@ -1,455 +1,699 @@
 # NVC Network GUI — 사용자 매뉴얼
 
-GUI Version 0.2 — 05/29/2026 10:51 PM  
+GUI Version 0.3 — 05/30/2026  
 대상: 뉴비전 교회 네트워크 운영팀
 
 ---
 
 ## 목차
 
-- [공통 사전 준비](#공통-사전-준비)
-- [Part 1 — 관리자(Admin) 매뉴얼](#part-1--관리자admin-매뉴얼)
-- [Part 2 — 팀원(User) 매뉴얼](#part-2--팀원user-매뉴얼)
-- [Part 3 — 탭별 기능 상세](#part-3--탭별-기능-상세)
-- [권한 구조 참조표](#권한-구조-참조표)
-- [자주 묻는 질문](#자주-묻는-질문)
+- [1. 시작하기](#1-시작하기)
+  - [1-1. 시스템 요구사항](#1-1-시스템-요구사항)
+  - [1-2. 설치 및 실행](#1-2-설치-및-실행)
+  - [1-3. 로그인](#1-3-로그인)
+  - [1-4. 화면 구성](#1-4-화면-구성)
+- [2. AP Status 탭](#2-ap-status-탭)
+  - [2-1. 컨트롤 바](#2-1-컨트롤-바)
+  - [2-2. AP 목록 테이블](#2-2-ap-목록-테이블)
+  - [2-3. ELK Stuck Count 조회](#2-3-elk-stuck-count-조회)
+  - [2-4. SSH 원격 진단](#2-4-ssh-원격-진단)
+  - [2-5. AP 분류 및 Reset 후보 선정](#2-5-ap-분류-및-reset-후보-선정)
+  - [2-6. AP Reset 실행](#2-6-ap-reset-실행)
+  - [2-7. 예약 관리 (AP Reset 이력)](#2-7-예약-관리-ap-reset-이력)
+  - [2-8. 상세 보기](#2-8-상세-보기)
+- [3. EFG Remote 탭](#3-efg-remote-탭)
+  - [3-1. EFG SSH 대시보드](#3-1-efg-ssh-대시보드)
+  - [3-2. EFG API 탐색기](#3-2-efg-api-탐색기)
+- [4. Log Export 탭](#4-log-export-탭)
+- [5. 동기화 탭](#5-동기화-탭)
+  - [5-1. NAS ELK Sync](#5-1-nas-elk-sync)
+  - [5-2. 연결 현황](#5-2-연결-현황)
+- [6. 설정 탭](#6-설정-탭)
+  - [6-1. 일반](#6-1-일반)
+  - [6-2. 보안 관리](#6-2-보안-관리)
+  - [6-3. 사용자 관리 (Admin)](#6-3-사용자-관리-admin)
+- [7. 팀원 게시판](#7-팀원-게시판)
+- [8. 권한 구조](#8-권한-구조)
+- [9. 관리자 초기 설정](#9-관리자-초기-설정)
+- [10. 자주 묻는 질문](#10-자주-묻는-질문)
 
 ---
 
-## 공통 사전 준비
+## 1. 시작하기
 
-### 시스템 요구사항
+### 1-1. 시스템 요구사항
 
 | 항목 | 요구 사양 |
 |------|-----------|
 | 운영체제 | Windows 10 / 11 (64-bit) |
 | Python | 3.10 이상 (3.13 권장) |
-| 스마트폰 앱 | Google Authenticator 또는 Authy |
-| VPN | 교회 내부망 VPN (GUI 실행 전 반드시 연결) |
-
-### Python 설치 확인
-
-```powershell
-python --version
-```
-
-`Python 3.10.x` 이상이 출력되면 정상입니다.  
-설치 시 **"Add Python to PATH"** 옵션을 반드시 체크하세요.
+| 스마트폰 앱 | Google Authenticator 또는 Authy (TOTP 2FA) |
+| VPN | 교회 내부망 VPN — GUI 실행 **전** 반드시 연결 |
+| 네트워크 | 192.168.11.x 대역 접근 가능 |
 
 ---
 
-## Part 1 — 관리자(Admin) 매뉴얼
+### 1-2. 설치 및 실행
+
+```powershell
+cd C:\Projects\nvc_network
+pip install -r gui\requirements.txt
+python gui\main.py
+```
+
+> **주의** — `python --version` 실행 시 Microsoft Store 메시지가 나오면:  
+> Windows 설정 → 앱 → 앱 실행 별칭에서 `python.exe` / `python3.exe` 별칭을 끄세요.
+
+VPN을 먼저 연결한 상태에서 실행하세요. VPN이 연결되지 않으면 로그인 화면에서 경고가 표시됩니다.
+
+---
+
+### 1-3. 로그인
+
+GUI를 처음 실행하면 로그인 화면이 표시됩니다.
+
+1. **ID / 비밀번호** 입력 후 Enter 또는 [로그인] 클릭
+2. 최초 로그인 시 **TOTP 2FA 등록** 화면이 나타납니다
+   - 화면의 QR 코드를 Google Authenticator 또는 Authy로 스캔
+   - 앱에 표시된 6자리 코드를 입력
+3. 이후 로그인 시마다 TOTP 코드 입력 요구 (기기 신뢰 등록 후 생략 가능)
+
+> 등록된 개발자 컴퓨터는 자동 로그인됩니다 (비밀번호·TOTP 생략).
+
+---
+
+### 1-4. 화면 구성
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│ 뉴비전 네트워크 관리  Version 0.3   [GUI 매뉴얼] [GUI 개요]    │  ← 타이틀 바
+│                                  [프로젝트 개요] [💬 팀원 게시판] │
+├──────────────────────────────────────────────────────────────────┤
+│  AP Status │ EFG Remote │ Log Export │ 동기화 │ 설정           │  ← 메인 탭
+├──────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│                         (탭 내용)                               │
+│                                                                  │
+└──────────────────────────────────────────────────────────────────┘
+```
+
+**타이틀 바 버튼:**
+
+| 버튼 | 기능 |
+|------|------|
+| GUI 매뉴얼 | 이 문서를 팝업으로 표시 (검색 가능) |
+| GUI 개요 | README.md 기술 개요 팝업 |
+| 프로젝트 개요 | 전체 프로젝트 개요 팝업 |
+| 💬 팀원 게시판 | 팀 피드백·공지 팝업 |
+
+---
+
+## 2. AP Status 탭
+
+AP 29대의 상태를 한 화면에서 조회, 분석, 제어하는 메인 탭입니다.
+
+---
+
+### 2-1. 컨트롤 바
+
+상단 컨트롤 바는 4개 섹션으로 구성됩니다.
+
+#### 섹션 1 — 상태 카드
+
+| 카드 | 의미 |
+|------|------|
+| 등록 | 인벤토리에 등록된 AP 총 수 |
+| 온라인 | SSH 조회 완료된 응답 AP 수 |
+| 오프라인 | SSH 응답 없음 / 제외된 AP 수 |
+
+#### 섹션 2 — SSH 조회
+
+| 버튼 | 동작 |
+|------|------|
+| 전체 조회 | 등록된 AP 전체에 SSH 접속, mca-dump + logread 수집 |
+| 선택 조회 | 테이블에서 선택(클릭)한 AP만 조회 |
+| 중지 | 진행 중인 조회 취소 |
+| 동작 설명 | 각 컬럼의 의미 설명 팝업 |
+| 경고 설정 | 각 컬럼의 ⚠ 표시 임계값 설정 팝업 |
+| 컬럼 설정 | 테이블에 표시할 컬럼 선택 팝업 |
+
+#### 섹션 3 — ELK 날짜 범위
+
+| 항목 | 설명 |
+|------|------|
+| ○ 전체 | 캐시된 전체 날짜 범위의 Stuck 집계 |
+| ● 범위 | 지정한 날짜 구간의 Stuck 집계 |
+| 오늘 | 날짜 범위를 오늘 하루로 설정 |
+| 목록 | 캐시에 존재하는 날짜 목록 팝업 |
+
+> 날짜 범위 변경 후 **[ELK Stuck Count]** 버튼을 눌러야 집계가 갱신됩니다.
+
+#### 섹션 4 — ELK Stuck Count
+
+[ELK Stuck Count] 버튼을 클릭하면 지정한 날짜 범위에서 각 AP의 Stuck 이벤트 수를 집계해 테이블 **ELK Stuck** 컬럼에 표시합니다.
+
+---
+
+### 2-2. AP 목록 테이블
+
+AP별 진단 정보가 한 행에 표시됩니다. 컬럼 헤더 클릭으로 정렬할 수 있습니다.
+
+| 컬럼 | 소스 | 의미 |
+|------|------|------|
+| AP | 인벤토리 | AP ID (AP01 ~ AP29) |
+| Name | 인벤토리 | AP 이름 (위치_AP번호) |
+| IP | 인벤토리 | IP 주소 |
+| Model | 인벤토리 | AP 모델 (AC Pro / AC HD / U6 LR / U7 Pro 등) |
+| 분류 | ResetScore | 색상 분류 아이콘 (🔴🟡🟢⬜) |
+| 점수 | ResetScore | 합산 위험 점수 |
+| ELK Stuck | ELK 캐시 | 날짜 범위 내 Stuck 이벤트 수 |
+| 로그오류 | logread grep | 현재 부팅 세션 내 오류 패턴 수 |
+| DevReset | logread | AC Pro 6.8.x 펌웨어 버그 감지 수 |
+| 재시작2G / 5G | mca-dump | 무선 드라이버 리셋 누적 횟수 |
+| VAP지연2G / 5G | mca-dump | VAP 초기화 타임아웃 누적 |
+| CU2G% / CU5G% | mca-dump | 채널 이용률 (%) |
+| Client2G / 5G | mca-dump | 현재 연결 클라이언트 수 |
+| Ch 2G / 5G / 6G | UniFi API | 채널 번호 |
+| BW 2G / 5G / 6G | UniFi API | 채널 폭 (MHz) |
+| CPU% | mca-dump | CPU 사용률 |
+| Mem% | mca-dump | 메모리 사용률 |
+| Uptime | mca-dump | 마지막 재부팅 이후 경과 시간 |
+| Firmware | mca-dump | 펌웨어 버전 |
+| SSH | SSH 접속 | 접속 성공 여부 (OK / SSH Fail) |
+| 응답(ms) | SSH | mca-dump 전체 왕복 시간 |
+| 흘력(B) | mca-dump | 데이터 수신량 |
+
+**⚠ 표시** — 임계값을 초과한 셀에 자동으로 표시됩니다. [경고 설정] 버튼으로 임계값을 조정할 수 있습니다.
+
+**행 색상:**
+
+| 색상 | 의미 |
+|------|------|
+| 흰색 | 정상 또는 미조회 |
+| 연한 빨강 | Reset 대기 선택됨 |
+| 주황 | Reset 진행 중 |
+
+---
+
+### 2-3. ELK Stuck Count 조회
+
+ELK Stuck은 로컬 캐시(NAS에서 동기화한 JSONL 파일)를 기반으로 집계됩니다.
+
+**절차:**
+1. 동기화 탭 → NAS ELK Sync 로 최신 로그를 먼저 동기화
+2. AP Status 탭 → 날짜 범위 설정
+3. [ELK Stuck Count] 클릭
+
+**Stuck 상태 색상:**
+
+| Stuck 수 | 색상 | 의미 |
+|---------|------|------|
+| 0 | 흰색 | 정상 |
+| 1 ~ 2 | 노랑 | 주의 |
+| 3 ~ 9 | 주황 | 의심 |
+| 10 이상 | 빨강 | 위험 |
+
+---
+
+### 2-4. SSH 원격 진단
+
+[전체 조회] 또는 [선택 조회] 버튼을 누르면 각 AP에 SSH로 접속해 아래 데이터를 수집합니다.
+
+- `mca-dump` — 무선 드라이버 통계 (재시작 횟수, VAP 지연, CU%, 클라이언트 수, CPU/메모리 등)
+- `logread` — 현재 부팅 이후의 시스템 로그 (오류 패턴 grep, DevReset 패턴 감지)
+
+수집 완료 후 각 컬럼이 자동으로 채워지고 ResetScore 분류가 적용됩니다.
+
+> 조회 중 [중지] 버튼으로 언제든 취소할 수 있습니다.  
+> 진행 상황은 화면 오른쪽 상태 바에 표시됩니다.
+
+---
+
+### 2-5. AP 분류 및 Reset 후보 선정
+
+#### AP Reset 후보 분류
+
+SSH 조회 완료 후 [AP Reset 후보 분류] 버튼을 누르면 ResetScore를 계산해 분류합니다.
+
+**점수 계산 기준:**
+
+| 항목 | 조건 | 점수 |
+|------|------|------|
+| 로그오류 | 1~2건 | 30 |
+| 로그오류 | 3~9건 | 40 |
+| 로그오류 | 10건 이상 | 50 |
+| ELK Stuck | 500~1999 | 15 |
+| ELK Stuck | 2000~4999 | 30 |
+| ELK Stuck | 5000 이상 | 50 |
+| VAP 지연 | 1~20 | 15 |
+| VAP 지연 | 21 이상 | 30 |
+| 채널이용률 | 70~84% | 10 |
+| 채널이용률 | 85% 이상 | 15 |
+
+**분류 결과:**
+
+| 색상 | 기준 | 의미 |
+|------|------|------|
+| 🔴 빨강 | 점수 ≥ 60 + Reset 근거 있음 | Reset 권장 |
+| 🟡 노랑 | 점수 ≥ 20 | 관찰 필요 |
+| 🟢 초록 | 점수 < 20 | 정상 |
+| ⬜ 회색 | 미조회 | 데이터 없음 |
+
+[분류 규칙] 버튼으로 점수 파라미터 설명을 볼 수 있고, [분류 설정] 버튼으로 임계값을 조정할 수 있습니다.
+
+#### Reset 대상 선택 방법
+
+| 버튼 | 동작 |
+|------|------|
+| AP Reset 선택 | 테이블에서 클릭한 AP를 Reset 대상으로 추가 |
+| AC Pro 선택 | AC Pro 모델 중 빨강/노랑 AP 자동 선택 |
+| 분류 선택 | 색상·모델 조건으로 대상 선택 팝업 |
+| AP 선택 해제 | 선택한 AP를 대상에서 제거 |
+| 모두 해제 | Reset 대상 전체 해제 |
+
+선택된 AP 수는 화면 오른쪽 **선택** 카드에 표시됩니다.
+
+---
+
+### 2-6. AP Reset 실행
+
+**권한 필요:** `can_reset_ap`
+
+**AP Reset 구조:**
+
+```
+GUI (PC)  →  EFG (OpenSSH)  →  sshpass  →  AP (Dropbear)
+```
+
+AP는 Dropbear SSH를 사용하므로 EFG를 경유해야 합니다.
+
+**실행 절차:**
+
+1. Reset 대상 AP 선택 (선택 카드 > 0)
+2. [AP Reset 실행] 버튼 클릭
+3. AP 비밀번호 입력 (처음 한 번만, 이후 세션 내 저장)
+4. **Reset 스케줄 팝업** 설정:
+
+| 항목 | 설명 |
+|------|------|
+| 시작 시각 | Reset 시작 날짜·시·분 ([현재+5분] / [새벽 2시] 단축 버튼) |
+| 실행 순서 | Yellow 먼저 → AP이름순 (기본) / Red 먼저 → AP이름순 |
+| 대상 AP | 체크박스로 최종 확인 및 개별 제외 가능 |
+| AP 간 간격 | 각 AP Reset 사이 대기 시간 (분, 기본 4분) |
+| 실행 모드 | **포그라운드** (팝업 유지, 진행 실시간 표시) / **백그라운드** (팝업 닫힘) |
+
+5. [실행 예약] 클릭 → 지정 시각에 순차 실행 시작
+
+> Reset 1회 완료 후 약 4분(기본 간격) 대기 후 다음 AP로 진행합니다.  
+> 실행 결과는 `runtime/operations.log`에 기록됩니다.
+
+---
+
+### 2-7. 예약 관리 (AP Reset 이력)
+
+하단 바 **[예약 관리]** 버튼을 누르면 GitHub 기반 예약 관리 팝업이 열립니다.
+
+> **nvc-auth 저장소**의 `ap_reset_schedule.json`으로 팀 공유 관리합니다.  
+> GitHub PAT(Personal Access Token)가 Settings에 등록되어 있어야 합니다.
+
+#### 탭 1 — 예약 목록
+
+| 컬럼 | 설명 |
+|------|------|
+| 예약 ID | 자동 생성 (YYYYMMDD-HHMMSS-작성자) |
+| 실행 시각 | 예약된 Reset 시작 시각 |
+| 대상 AP | Reset 대상 AP ID 목록 |
+| 간격(분) | AP 간 대기 시간 |
+| 순서 | 실행 순서 규칙 |
+| 상태 | pending / running / done / cancelled |
+| 작성자 | 예약 생성자 |
+
+- [선택 예약 취소] — pending 상태의 예약만 취소 가능
+- [새로고침] — GitHub에서 최신 목록 재조회
+
+**예약 상태 색상:**
+
+| 색상 | 상태 |
+|------|------|
+| 노랑 | pending (대기 중) |
+| 파랑 | running (실행 중) |
+| 초록 | done (완료) |
+| 회색 | cancelled (취소됨) |
+
+#### 탭 2 — AP Reset 이력
+
+Reset 실행 전체 이력을 조회합니다. AP별, 결과별 필터가 가능합니다.
+
+| 컬럼 | 설명 |
+|------|------|
+| No | 순번 (최신순) |
+| AP | AP ID |
+| 실행 시각 | Reset 실행 일시 |
+| 결과 | ✓ 성공 / ✗ 실패 |
+| 예약 ID | 연결된 예약 ID |
+
+---
+
+### 2-8. 상세 보기
+
+테이블에서 AP를 선택 후 [상세 보기] 버튼을 클릭하면 해당 AP의 상세 분석 팝업이 열립니다.
+
+- ELK 기반 Stuck 유형 분류 (channel_invalid / vap_timeout / radio_reset)
+- 시간대별 Stuck 발생 패턴
+- mca-dump 전체 데이터
+- logread 주요 오류 목록
+
+---
+
+## 3. EFG Remote 탭
+
+**권한 필요:** `can_view_efg_tab`
+
+EFG(Edge Gateway)의 시스템 상태와 UniFi Controller API를 조회하는 탭입니다.
+
+---
+
+### 3-1. EFG SSH 대시보드
+
+[진단 조회] 버튼을 클릭하면 EFG에 SSH로 접속해 실시간 시스템 정보를 수집합니다.
+
+**수집 정보:**
+
+| 섹션 | 내용 |
+|------|------|
+| 시스템 정보 | Hostname, Date, Uptime, Load Average, Memory, Disk, 기본 경로 |
+| 프로세스 상태 | unifi / mongod / java / dnsmasq / dhcp 실행 상태 (색상 표시) |
+| 네트워크 경로 | `ip route show` 결과 |
+| 인터페이스 목록 | 이름 / IP / MAC / 상태 |
+| 트래픽 통계 | Rx/Tx MB, 패킷, 오류 수 |
+| ARP 테이블 | IP / MAC / 인터페이스 / 상태 |
+
+모든 테이블 컬럼 헤더를 클릭하면 정렬됩니다.
+
+우측 패널에서 [로그 재조회] 버튼으로 로그만 별도 갱신할 수 있습니다.
+
+---
+
+### 3-2. EFG API 탐색기
+
+UniFi Controller (Dream Machine Enterprise) API를 read-only GET으로 탐색합니다.
+
+**레이아웃:** 좌측 30% (정보 패널) / 우측 70% (API 뷰어)
+
+#### 좌측 패널
+
+| 섹션 | 내용 |
+|------|------|
+| API 연결 상태 | New API / Legacy API 연결 여부 |
+| Site 정보 | Site 이름, ID, 설명 |
+| 장비 현황 | AP / SW / EFG 수 |
+| WLAN | SSID 드롭다운 → 선택 시 상세 카드 (networkconf / usergroup 연동) |
+| 전체 장비 목록 | AP / SW / EFG 라디오 버튼 필터 |
+
+#### 우측 패널
+
+| 요소 | 설명 |
+|------|------|
+| Preset 드롭다운 | 20개 사전 정의 API 경로 선택 |
+| AP 선택 | 특정 AP 상세/통계 조회 시 표시 |
+| [GET] 버튼 | 선택된 Preset API 호출 |
+| JSON 뷰어 | 응답 JSON 표시 (캐시 자동 로드) |
+
+**전체 Preset GET** — 20개 Preset을 순서대로 실행해 `runtime/api_probe/` 에 JSON 파일로 저장한 뒤 좌측 패널을 자동 갱신합니다.
+
+> API 인증: Settings → 보안 관리 → UniFi API Key 등록 필요
+
+---
+
+## 4. Log Export 탭
+
+**권한 필요:** `can_export`
+
+날짜·AP·유형·키워드 조건으로 로컬 캐시에서 로그를 필터링해 파일로 저장합니다.
+
+**필터 조건:**
+
+| 항목 | 설명 |
+|------|------|
+| 날짜 범위 | From ~ To (YYYY-MM-DD) |
+| AP | ALL 또는 특정 AP (AP01 ~ AP29) |
+| 유형 | ap_stuck / ap_no_service / rf_issue / dhcp_dns / qos / system_issue |
+| 키워드 | 추가 텍스트 필터 (선택사항) |
+
+[Export 실행] 클릭 → 조건에 맞는 로그가 `runtime/exports/` 에 저장됩니다.
+
+> Export 전에 동기화 탭에서 최신 로그를 동기화해 두세요.
+
+---
+
+## 5. 동기화 탭
+
+**권한 필요:** `can_sync_nas`
+
+---
+
+### 5-1. NAS ELK Sync
+
+NAS의 Logstash JSONL 출력 파일을 PC 로컬 캐시로 복사합니다.
+
+**최근 N일 동기화:**
+1. Combobox에서 일수 선택 (1 / 2 / 3 / 5 / 7 / 14 / 30 / 60일)
+2. [Log 동기화] 클릭
+
+**날짜 범위 동기화:**
+1. From / To 날짜 직접 입력 (YYYY-MM-DD)
+2. [Log 동기화] 클릭
+
+**삭제 기능:**
+
+| 버튼 | 동작 |
+|------|------|
+| Log 삭제 | 지정 날짜 범위의 로컬 캐시 삭제 |
+| 전체 Log 삭제 | 로컬 캐시 전체 삭제 |
+| Log 상태 새로고침 | 로컬 캐시 용량 및 날짜 현황 갱신 |
+
+> 동기화는 차분(변경 파일만) 방식으로 동작합니다.  
+> NAS SSH 접속 정보는 `config/ssh_targets.json`에 설정되어 있어야 합니다.
+
+---
+
+### 5-2. 연결 현황
+
+NAS / EFG / AP 의 SSH 연결 상태를 실시간으로 확인합니다.
+
+---
+
+## 6. 설정 탭
+
+---
+
+### 6-1. 일반
+
+| 항목 | 설명 |
+|------|------|
+| UI 폰트 | 화면 전체 폰트 패밀리 및 크기 변경 |
+| AP 등록 수 | 인벤토리에 등록된 AP 수 표시 |
+| AP Remote 기본 정렬 | AP Status 탭 테이블 초기 정렬 기준 |
+| mca 덤프 관리 | 수집된 mca-dump 파일 목록 및 삭제 |
+
+---
+
+### 6-2. 보안 관리
+
+#### UniFi API 설정
+
+| 항목 | 설명 |
+|------|------|
+| Base URL | UniFi Controller 주소 (예: https://192.168.11.1) |
+| API Key | New API 인증 키 (Windows Keychain에 암호화 저장) |
+| [API Key 저장] | 입력한 API Key를 keyring에 저장 |
+| [API 연결 테스트] | Probe 실행 — 20개 Preset GET 후 결과 표시 |
+
+#### 인증 방식 설정 (Admin)
+
+| 항목 | 설명 |
+|------|------|
+| GitHub 인증 | GitHub nvc-auth 저장소의 users.json 사용 |
+| Local 인증 | 로컬 `config/users.json` 사용 |
+| GitHub PAT | Personal Access Token 등록 (Windows Keychain 저장) |
+
+---
+
+### 6-3. 사용자 관리 (Admin)
+
+**권한 필요:** `can_manage_users` (Admin 전용)
+
+#### 사용자 목록
+
+테이블에 전체 사용자가 표시됩니다:
+- username / display_name / role / active 여부 / 마지막 로그인 / TOTP 등록 여부
+
+#### 버튼 설명
+
+| 버튼 | 동작 |
+|------|------|
+| 새 사용자 추가 | 사용자 생성 팝업 (ID / 이름 / 비밀번호 / 역할 / 권한) |
+| 편집 | 선택한 사용자 정보 수정 |
+| TOTP 초기화 | 선택한 사용자의 2FA 재등록 강제 |
+| 역할 권한 설정 | 역할별 기본 권한 일괄 변경 |
+| 삭제 | 선택한 사용자 삭제 |
+
+#### 역할 및 기본 권한
+
+| 역할 | can_reset_ap | can_sync_nas | can_export | can_view_efg_tab | can_manage_users |
+|------|:---:|:---:|:---:|:---:|:---:|
+| admin | ✓ | ✓ | ✓ | ✓ | ✓ |
+| operator | 설정에 따름 | ✓ | ✓ | ✓ | ✗ |
+| viewer | ✗ | ✗ | ✓ | ✓ | ✗ |
+
+#### 개발자 컴퓨터 관리
+
+[이 컴퓨터 개발자 등록] 버튼을 클릭하면 현재 PC가 자동 로그인 컴퓨터로 등록됩니다.  
+등록된 컴퓨터는 비밀번호·TOTP 없이 자동 로그인됩니다.
+
+---
+
+## 7. 팀원 게시판
+
+상단 타이틀 바의 **[💬 팀원 게시판]** 버튼으로 열립니다.
+
+> **nvc-auth 저장소**의 `feedback.json`으로 팀 공유 관리합니다.  
+> GitHub PAT가 Settings에 등록되어 있어야 합니다.
+
+#### 목록 탭
+
+- **유형 필터**: 전체 / 버그 / 개선 / 공지
+- **상태 필터**: 전체 / 열림 / 닫힘
+- 항목 더블클릭 → 상세 / 댓글 팝업
+
+#### 작성 탭
+
+| 항목 | 설명 |
+|------|------|
+| 유형 | 🐛 버그 / 💡 개선 / 📢 공지 (공지는 Admin만 작성 가능) |
+| 제목 | 한 줄 제목 |
+| 내용 | 상세 내용 |
+
+[제출] 클릭 → GitHub에 저장됩니다.
+
+#### 상세 팝업 (더블클릭)
+
+- 피드백 유형 / 상태 / 제목 / 작성자 / 날짜
+- 본문 내용
+- 댓글 목록
+- 댓글 입력 (open 상태에서만 가능)
+
+> **공지 자동 표시** — 로그인 후 2.5초 뒤 새 공지(status=open)가 있으면 자동으로 팝업이 표시됩니다.
+
+---
+
+## 8. 권한 구조
+
+### 역할별 탭 접근
+
+| 기능 | viewer | operator | admin |
+|------|:---:|:---:|:---:|
+| AP Status 조회 | ✓ | ✓ | ✓ |
+| AP Reset 실행 | ✗ | 설정에 따름 | ✓ |
+| EFG Remote | ✓ | ✓ | ✓ |
+| Log Export | ✓ | ✓ | ✓ |
+| NAS 동기화 | ✗ | ✓ | ✓ |
+| 예약 관리 조회 | ✓ | ✓ | ✓ |
+| 예약 관리 생성/취소 | ✓ | ✓ | ✓ |
+| 팀원 게시판 | ✓ | ✓ | ✓ |
+| 공지 작성 | ✗ | ✗ | ✓ |
+| 사용자 관리 | ✗ | ✗ | ✓ |
+| GitHub PAT 설정 | ✗ | ✗ | ✓ |
+
+---
+
+## 9. 관리자 초기 설정
 
 > 이 섹션은 **관리자 1명만** 진행합니다.
 
----
-
-### 1-1. 최초 설치
+### 9-1. 패키지 설치
 
 ```powershell
 cd C:\Projects\nvc_network
 pip install -r gui\requirements.txt
 ```
 
----
+### 9-2. SSH 설정 파일 생성
 
-### 1-2. Admin 계정 초기 생성
+`gui/config/ssh_targets.example.json`을 복사해 `ssh_targets.json`을 만들고 실제 접속 정보를 입력합니다.
 
-> **최초 1회만** 실행합니다. `gui/config/users.json`이 이미 있다면 건너뜁니다.
+```json
+{
+  "nas": { "host": "192.168.x.x", "port": 22, "username": "admin", "key_path": "~/.ssh/id_rsa" },
+  "efg": { "host": "192.168.11.1", "port": 22, "username": "admin" },
+  "ap_defaults": { "username": "ubnt", "port": 22 }
+}
+```
+
+### 9-3. 사용자 파일 생성
 
 ```powershell
 python gui\init_users.py
 ```
 
-> `gui/config/users.json`은 git에서 제외됩니다. 외부 유출 주의.
+`gui/config/users.json`이 생성되고 기본 admin 계정이 만들어집니다.
+
+### 9-4. GitHub PAT 등록 (팀원 게시판 / 예약 관리 사용 시)
+
+1. GitHub → Settings → Developer settings → Personal access tokens → Generate new token
+2. 권한: `repo` (nvc-auth 저장소 read/write)
+3. GUI 실행 → Settings → 보안 관리 → GitHub PAT 입력 → [저장]
+
+### 9-5. UniFi API Key 등록
+
+1. UniFi Controller → Settings → System → API → Generate API Key
+2. GUI → Settings → 보안 관리 → API Key 입력 → [API Key 저장]
+3. [API 연결 테스트] 로 동작 확인
+
+### 9-6. AP 비밀번호 등록
+
+AP Reset 첫 실행 시 비밀번호 입력 팝업이 나타납니다. 입력한 비밀번호는 Windows Keychain에 안전하게 저장됩니다.
 
 ---
 
-### 1-3. SSH 접속 설정
+## 10. 자주 묻는 질문
 
-```powershell
-copy gui\config\ssh_targets.example.json gui\config\ssh_targets.json
-```
+**Q. VPN 없이 실행하면 어떻게 되나요?**  
+A. 로그인은 가능하지만 SSH 조회, NAS 동기화, EFG 접속 등 내부망 기능이 모두 실패합니다. VPN 연결 후 재시도하세요.
 
-```json
-{
-  "nas":  { "host": "NAS_IP", "username": "nas_user", "port": 22 },
-  "efg":  { "host": "EFG_IP", "username": "root",     "port": 22 },
-  "ap_defaults": {
-    "username": "ubnt",
-    "port": 22,
-    "reboot_command": "reboot"
-  }
-}
-```
+**Q. 로그인 시 TOTP 앱 코드가 틀리다고 나옵니다.**  
+A. 스마트폰 시간이 정확한지 확인하세요. 시간 오차가 30초 이상이면 TOTP가 맞지 않을 수 있습니다.
 
-> 비밀번호는 파일에 저장하지 않습니다. 첫 실행 시 입력하면 Windows Credential Manager에 저장할지 묻습니다.
+**Q. SSH Fail 로 표시되는 AP가 있습니다.**  
+A. 해당 AP의 전원 및 네트워크 연결 상태를 확인하세요. VPN 연결이 정상이고 다른 AP는 정상이라면 AP 자체 문제일 수 있습니다.
 
----
+**Q. ELK Stuck 컬럼이 모두 0으로 표시됩니다.**  
+A. 동기화 탭에서 먼저 NAS 로그를 동기화해야 합니다. 날짜 범위가 캐시된 데이터 범위를 벗어나도 0으로 표시됩니다.
 
-### 1-4. UniFi API 설정
+**Q. AP Reset 실행 버튼이 비활성화되어 있습니다.**  
+A. `can_reset_ap` 권한이 없는 계정입니다. Admin에게 권한 부여를 요청하세요.
 
-Settings 탭 → **UniFi API 설정**:
+**Q. 예약 관리가 열리지 않거나 목록이 비어있습니다.**  
+A. GitHub PAT가 등록되어 있어야 합니다. Settings → 보안 관리에서 PAT를 확인하세요.
 
-1. Base URL: `https://192.168.11.1` (EFG IP)
-2. API Key: UniFi Network → Settings → Integrations → API Keys에서 발급
-3. **API Key 저장 (keyring)** 버튼 클릭
-4. **API 연결 테스트 (Probe)** 버튼으로 연결 확인
+**Q. 팀원 게시판 제출이 실패합니다.**  
+A. GitHub PAT 등록 여부와 인터넷 연결 상태를 확인하세요. PAT 만료 여부도 확인하세요.
 
----
+**Q. 공지를 작성하려고 하는데 공지 버튼이 비활성화됩니다.**  
+A. 공지(📢)는 Admin 역할만 작성할 수 있습니다.
 
-### 1-5. GUI 실행
+**Q. Reset 후에도 AP 상태가 개선되지 않습니다.**  
+A. Reset 후 약 5분 대기 후 SSH 재조회하세요. 여전히 문제가 있으면 AP를 물리적으로 점검하거나 펌웨어 업그레이드를 고려하세요.
 
-```powershell
-# VPN을 먼저 연결한 뒤 실행
-python gui\main.py
-```
+**Q. 컬럼이 너무 많아 보기 불편합니다.**  
+A. [컬럼 설정] 버튼으로 필요한 컬럼만 선택해 표시할 수 있습니다. 설정은 저장됩니다.
 
-GUI는 항상 **최대화 상태**로 시작됩니다.
+**Q. 폰트가 깨져 보입니다.**  
+A. Settings → 일반 → UI 폰트에서 시스템에 설치된 폰트를 선택하고 [폰트 저장]을 클릭하세요.
+
+**Q. 여러 명이 동시에 Reset 예약을 만들면 충돌하지 않나요?**  
+A. 예약 생성 시 같은 AP에 ±60분 내 겹치는 예약이 있으면 경고가 표시됩니다. 팀원 게시판으로 사전에 조율하세요.
 
 ---
 
-### 1-6. 팀원 계정 추가
-
-설정 탭 → **사용자 관리** 서브탭 → **새 사용자 추가** 버튼
-
-| 항목 | 설명 |
-|------|------|
-| 계정 ID | 팀원이 로그인할 ID |
-| 표시 이름 | GUI에 표시될 이름 |
-| 비밀번호 | 초기 비밀번호 8자 이상 |
-| 역할 | `admin` / `operator` / `viewer` |
-
----
-
-### 1-7. 팀원 계정 편집 / TOTP 초기화 / 삭제
-
-사용자 관리 서브탭 → 해당 팀원 선택 → **편집** / **TOTP 초기화** / **삭제** 버튼
-
----
-
-### 1-8. 개발자 모드 등록
-
-등록된 PC에서 비밀번호·TOTP 없이 자동 로그인됩니다.
-
-1. 정상 로그인 후 사용자 관리 서브탭 → **이 컴퓨터 개발자 등록**
-2. 다음 실행부터 자동 로그인, 상단에 `⚙ 개발자 모드` 배지 표시
-
----
-
-## Part 2 — 팀원(User) 매뉴얼
-
----
-
-### 2-1. 사전 확인
-
-- [ ] 관리자에게 계정 ID와 초기 비밀번호를 받았다.
-- [ ] 스마트폰에 Google Authenticator 또는 Authy가 설치되어 있다.
-- [ ] VPN이 설치되어 있고 연결 방법을 알고 있다.
-- [ ] Python 3.10 이상이 설치되어 있다.
-
----
-
-### 2-2. 최초 설치 및 실행
-
-```powershell
-cd C:\Projects\nvc_network
-pip install -r gui\requirements.txt
-
-# VPN 연결 후
-python gui\main.py
-```
-
----
-
-### 2-3. 첫 로그인 — TOTP 초기 설정
-
-1. ID / 비밀번호 입력 → 로그인
-2. QR 코드 화면이 표시되면 Google Authenticator → **+** → **QR 코드 스캔**
-3. 앱에 표시된 6자리 코드 입력 → **설정 완료**
-
-> 코드는 30초마다 바뀝니다. 이후 매번 로그인 시 앱의 현재 코드를 입력합니다.
-
----
-
-### 2-4. 이후 매번 로그인
-
-```
-1. VPN 연결
-2. python gui\main.py 실행
-3. ID + 비밀번호 → 로그인
-4. 스마트폰 6자리 코드 입력 → 확인
-5. 메인 화면 진입
-```
-
----
-
-### 2-5. 인증 앱 기기 변경 시
-
-스마트폰을 교체하거나 앱을 재설치한 경우 **관리자에게 TOTP 초기화를 요청**하세요.  
-초기화 후 다음 로그인 시 QR 코드를 다시 스캔하면 됩니다.
-
----
-
-## Part 3 — 탭별 기능 상세
-
-권한에 따라 일부 탭이나 버튼이 비활성화될 수 있습니다.
-
----
-
-### AP Status 탭
-
-AP와 직접 SSH 접속(EFG relay 경유)하여 무선 하드웨어 상태를 진단합니다.
-
-#### 조회 방법
-
-| 버튼 | 동작 |
-|------|------|
-| **전체 조회** | 인벤토리의 모든 AP(29대) 동시 조회 |
-| **선택 조회** | 선택한 AP만 조회 (Shift로 다중 선택) |
-| **중지** | 진행 중인 조회 중단 |
-
-#### 진단 컬럼
-
-| 컬럼 | 의미 |
-|------|------|
-| **분류** | AP Reset 후보 분류 색상 순위 |
-| **점수** | ResetScore 합산 점수 |
-| **ELK Stuck** | ELK Log 기반 누적 Stuck 이벤트 수 |
-| **로그오류** | 현재 부팅 세션 중 실제 오류 패턴 수 |
-| **DevReset** | AC Pro fw 6.8.x 버그(WAL_DBGID_DEV_RESET) 횟수 |
-| **재시작2G/5G** | 드라이버 무선 리셋 횟수 (부팅 후 누적) |
-| **VAP지연2G/5G** | VAP 초기화 타임아웃 횟수 |
-| **CU2G%/CU5G%** | 채널 이용률 (높을수록 혼잡) |
-| **Client2G/5G** | 현재 연결 클라이언트 수 |
-| **Ch 2G/5G/6G** | 현재 채널 (UniFi API 연동) |
-| **BW 2G/5G/6G** | 채널 폭 MHz (UniFi API 연동) |
-| **CPU%/Mem%** | AP CPU·메모리 사용률 |
-| **Uptime** | 마지막 재부팅 이후 경과 시간 |
-| **응답(ms)** | SSH 응답 왕복 시간 |
-
-임계값 초과 셀에 `⚠` 표시. **경고 설정** 버튼으로 임계값 변경 가능.
-
-**AC Pro DevReset 강조**: AC Pro에서 DevReset > 0 이고 재시작5G > 0 이면 DevReset 셀을 `▶ N` **빨간 Bold**로 표시. 경고 설정 팝업에서 ON/OFF 가능 (기본: ON).
-
-#### ELK Stuck Count (Stuck 집계)
-
-날짜 범위를 선택하고 **ELK Stuck Count** 실행:
-
-| 횟수 | 상태 색상 |
-|------|----------|
-| 0 | Healthy (초록) |
-| 1~2 | Warning (노랑) |
-| 3~9 | Suspect (주황) |
-| 10+ | Critical (빨강) |
-
-#### AP Reset 후보 분류
-
-**AP Reset 후보 분류** 버튼 클릭 → 각 AP에 ResetScore 계산 후 행 색상 지정:
-
-| 색상 | 의미 | 대응 |
-|------|------|------|
-| 🔴 빨강 | Reset 후보 | 즉시 Reset 검토 |
-| 🟡 노랑 | 관찰 필요 | 추이 모니터링 |
-| 🟢 초록 | 정상 | 조치 불필요 |
-| ⬜ 회색 | 미조회 | SSH 조회 필요 |
-
-- **분류규칙** 버튼: 전체 점수 조건 확인 팝업
-- **분류설정** 버튼: 임계값·점수 수정 후 저장
-
-#### AP Reset — 다중 선택 일괄 실행
-
-> `can_reset_ap` 권한 필요
-
-1. 테이블에서 Reset할 AP 클릭 (Shift 다중 선택)
-2. **AP Reset 선택** → 선택 행이 빨간색으로 변함  
-   또는 **AC Pro 선택** → AC Pro 전체를 한 번에 Reset 대상으로 지정  
-   또는 **분류 선택** → 분류별(빨강/노랑 등) 일괄 지정
-3. **AP Reset 실행** → 스케줄 설정 후 실행
-4. 결과 표시 + `runtime/operations.log` 기록
-
----
-
-### EFG Remote 탭
-
-#### EFG SSH 서브탭
-
-**진단 조회** 버튼 클릭 → EFG SSH 접속 후 대시보드 표시:
-
-| 섹션 | 표시 정보 |
-|------|----------|
-| 시스템 정보 | Hostname, Uptime, Kernel, Load, Memory |
-| 네트워크 경로 | ip route show |
-| 인터페이스 | 이름, IP/prefix, MAC, 상태 |
-| 트래픽 통계 | 수신/송신 MB, 패킷, 오류 |
-| ARP 테이블 | IP, MAC, 인터페이스, 상태 |
-
-모든 테이블 헤더 클릭 시 정렬.
-
-#### EFG API 서브탭
-
-UniFi Controller API를 read-only GET으로 탐색합니다.
-
-**시작 방법:**
-1. 설정 탭 → **API 연결 테스트 (Probe)** → 연결 성공 확인
-2. EFG API 탭 → **전체 Preset GET** 버튼 → 20개 preset 순서대로 실행
-
-**좌측 패널:**
-- API 연결 상태 / Site 정보 / 장비 현황 카드
-- WLAN: SSID 드롭다운에서 선택 → 상세 정보 표시
-- 장비 목록: **AP** / **SW** / **EFG** 중 선택하여 해당 장비만 표시
-
-**우측 탐색기:**
-- Preset 선택 → 저장된 캐시 자동 표시
-- **GET** 버튼으로 최신 데이터 재조회
-- AP 정보/통계 preset: AP 드롭다운에서 선택 시 즉시 조회
-
-**주요 Preset:**
-
-| 분류 | Preset | 용도 |
-|------|--------|------|
-| Official | sites | Site ID 확인 / API 연결 테스트 |
-| Official | devices | AP/Switch 목록, online/offline, firmware |
-| Official | clients | 현재 접속 클라이언트 수 |
-| Official | networks | VLAN ID / 네트워크 목록 |
-| Official | AP 정보 | 특정 AP 상세 (드롭다운 선택) |
-| Official | AP 통계 | 특정 AP 최신 통계 |
-| Legacy | wlanconf | SSID 설정, 밴드, 인증, VLAN |
-| Legacy | networkconf | VLAN/네트워크 설정 |
-| Legacy | health | Gateway/LAN/WAN health |
-| Legacy | sysinfo | 컨트롤러 버전 정보 |
-| Legacy | dashboard | 사이트 트래픽 통계 |
-| Legacy | rogueap | 주변 AP 스캔 (채널 간섭 분석) |
-
----
-
-### Log Export 탭
-
-날짜 범위, AP, 유형, 키워드 조건에 맞는 로그를 파일로 저장합니다.
-
-| 항목 | 설명 |
-|------|------|
-| 날짜 범위 | 분석 시작·종료 날짜 |
-| AP | 특정 AP 또는 ALL |
-| Type | ap_stuck / ap_no_service / rf_issue / dhcp_dns / qos / system_issue |
-| Keyword | 추가 키워드 필터 (선택사항) |
-
-**Export 실행** → 결과 하단 표시 + `runtime/exports/` 저장
-
----
-
-### 동기화 탭
-
-> `can_sync_nas` 권한 필요
-
-NAS에 저장된 Logstash JSONL 로그를 PC 로컬 캐시로 동기화합니다 (차분 동기화).
-
-1. **NAS Log 동기화** 클릭
-2. 비밀번호 입력 (저장된 경우 생략)
-3. 동기화 완료 → `runtime/logs/raw/` 저장
-
----
-
-### 설정 탭
-
-스크롤로 모든 설정에 접근 가능합니다.
-
-#### UniFi API 설정
-- Base URL / API Key 입력 및 keyring 저장
-- **API 연결 테스트 (Probe)**: 연결 상태·스타일·Endpoint·응답시간 확인
-
-#### AP 등록 수
-현재 인벤토리 AP 수와 별도로 등록 수를 지정합니다 (Summary 카드 기준).
-
-#### AP Remote 기본 정렬
-GUI 시작 시 AP 테이블 초기 정렬 기준 선택 후 저장.
-
-#### mca 덤프 관리
-AP Remote 조회 시 저장된 mca-dump 파일을 날짜별로 관리.
-
----
-
-### 사용자 관리 서브탭 (Admin 전용)
-
-> `can_manage_users` 권한 필요
-
-| 기능 | 설명 |
-|------|------|
-| 새 사용자 추가 | 계정 ID, 이름, 비밀번호, 역할, 권한 설정 |
-| 편집 | 이름·역할·권한 변경, 비밀번호 초기화 |
-| TOTP 초기화 | 인증 앱 분실/기기 변경 시 QR 재발급 |
-| 삭제 | 계정 삭제 (본인 계정 삭제 불가) |
-| 이 컴퓨터 개발자 등록 | 현재 PC 자동 로그인 등록 |
-
----
-
-## 권한 구조 참조표
-
-| 권한 플래그 | 설명 | viewer | operator | admin |
-|-------------|------|:---:|:---:|:---:|
-| `can_reset_ap` | AP 원격 재부팅 | ✗ | 관리자 설정 | ✓ |
-| `can_sync_nas` | NAS 로그 동기화 | ✗ | ✓ | ✓ |
-| `can_export` | Log Export 실행 | ✓ | ✓ | ✓ |
-| `can_view_efg_tab` | EFG Remote 탭 접근 | ✓ | ✓ | ✓ |
-| `can_manage_users` | 사용자 관리 탭 | ✗ | ✗ | ✓ |
-
----
-
-## 자주 묻는 질문
-
-**Q. VPN 연결했는데 "교회 내부 네트워크에 접속할 수 없습니다"가 나옵니다.**  
-A. VPN이 완전히 연결된 뒤 GUI를 실행하세요. VPN 연결 직후 몇 초 대기 후 재시작하면 해결됩니다.
-
----
-
-**Q. 6자리 코드가 올바르지 않습니다.**  
-A. 코드는 30초마다 바뀝니다. 앱에서 새 코드로 바뀐 직후 입력하거나, PC 시간 동기화를 확인하세요.  
-Windows: 설정 → 시간 및 언어 → 지금 동기화.
-
----
-
-**Q. 스마트폰을 교체했습니다.**  
-A. 관리자에게 TOTP 초기화를 요청하세요. 초기화 후 새 기기에서 QR 코드를 다시 스캔하면 됩니다.
-
----
-
-**Q. Log 동기화 / AP Reset 버튼이 비활성화되어 있습니다.**  
-A. 해당 권한이 없는 계정입니다. 관리자에게 권한 설정을 요청하세요.
-
----
-
-**Q. AP Remote 조회 시 "Auth failed" 오류가 납니다.**  
-A. AP SSH 비밀번호가 틀렸거나 변경되었습니다.  
-설정 탭 → **AP SSH 비밀번호 삭제** → 조회 재시도 시 새 비밀번호 입력.
-
----
-
-**Q. AC Pro DevReset이 수백 건인데 Reset이 필요한가요?**  
-A. AC Pro fw 6.8.x 고유의 RRM 스캔 버그입니다. Reset 후 재부팅 시 재발합니다.  
-`AC Pro 선택` 버튼으로 전체 Reset 후 증상이 줄어들면 일시적 해소, 재발 반복 시 펌웨어 업그레이드가 필요합니다.
-
----
-
-**Q. ELK Stuck이 높고 Uptime이 짧은 AP가 있습니다.**  
-A. 재부팅 후에도 Stuck이 재발하는 반복 장애 패턴입니다. Reset 최우선 대상으로 처리하세요.
-
----
-
-**Q. EFG API Probe는 성공했는데 데이터가 비어 있습니다.**  
-A. **전체 Preset GET** 버튼을 실행하세요. Probe 후 자동으로 데이터를 가져오지 않습니다.
-
----
-
-**Q. EFG API에서 특정 preset이 404가 납니다.**  
-A. 이 컨트롤러(UniFi OS / Dream Machine Enterprise)에서 지원하지 않는 Legacy endpoint입니다.  
-`stat/event`, `stat/device`, `rest/device`, `stat/sta` 등은 해당 컨트롤러에서 미지원입니다.
-
----
-
-**Q. 개발자 모드가 동작하지 않습니다.**  
-A. 사용자 관리 서브탭 → **이 컴퓨터 개발자 등록**을 다시 실행하세요.  
-Machine ID는 Windows MachineGuid 기반이므로 VPN 어댑터 변경의 영향을 받지 않습니다.
-
----
-
-*문의: 네트워크 관리자 (ai@newvisionchurch.org)*
+*NVC Network GUI v0.3 — 뉴비전 교회 네트워크 운영팀*
