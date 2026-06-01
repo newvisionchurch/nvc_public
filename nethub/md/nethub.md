@@ -1,6 +1,6 @@
 # NVC Network Hub (nethub) — SW 설계 참조
 
-GUI Version 0.3 — 05/30/2026  
+GUI Version 0.4 — 05/31/2026  
 Python 3.10+ / Tkinter / Windows 로컬 관리 도구
 
 ---
@@ -352,5 +352,5 @@ COLOR_BORDER    = "#cfd8dc"   # 카드/입력 영역 테두리
 |------|----------|
 | v0.1 | AP Status + EFG Remote + Log Export + NAS 동기화 + bcrypt/TOTP 인증 |
 | v0.2 | ResetScore UI, EFG SSH 정렬, AP Reset 포그라운드/백그라운드, GitHub PAT |
-| v0.3 (05/30) | AP Reset 예약(GitHub), 팀원 게시판, Block Diagram, 3단계 인증, 자동화 설정 |
+| v0.4 (05/31) | AP Reset 예약(GitHub), 팀원 게시판, Block Diagram, 3단계 인증, 자동화 설정 |
 | v0.3 (05/31) | 색상 설정 팝업 분리, 설정 탭 재구성(일반/자동화/보안/사용자), admin 해시 격리 |
