@@ -4,6 +4,11 @@
 
 커밋 메시지에 `Co-Authored-By` 줄을 추가하지 않는다.
 
+## Sync 규칙
+
+`docs/` 아래 md 파일을 수정한 경우 커밋·push 후 반드시 `scripts/sync.ps1`을 실행한다.
+sync는 `docs/*.md` + 루트 `CLAUDE.md` + `README.md` → `nvc_public/nethub/md/` 로 복사 후 자동 push한다.
+
 ## Push 규칙
 
 사용자가 "push all" 또는 "push"를 요청하면 아래 4개 저장소를 모두 push한다.
