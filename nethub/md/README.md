@@ -14,7 +14,7 @@ EFG / AP 장비
 NAS ELK Stack (Logstash V27)  ← 로그 수집·분류·저장 (JSONL)
     │
     ▼
-PC 관리 GUI (Python/Tkinter v0.3)  ← 로그 분석, 문제 AP 식별
+NVC NetHub (Python/Tkinter v0.3)  ← 로그 분석, 문제 AP 식별
     │
     ▼
 EFG / AP 원격 제어 (SSH)  ← AP Reset, EFG 조회, UniFi API
@@ -22,7 +22,7 @@ EFG / AP 원격 제어 (SSH)  ← AP Reset, EFG 조회, UniFi API
 
 | 폴더 | 내용 |
 |------|------|
-| `source/` | Python/Tkinter 관리 GUI |
+| `source/` | NVC NetHub SW |
 | `elk/` | NAS Docker ELK Stack (compose.yaml + logstash.conf) |
 | `docs/` | 프로젝트 문서 (AI context 자동 로드) |
 | `scripts/` | PowerShell 유틸리티 스크립트 |

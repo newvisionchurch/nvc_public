@@ -1,4 +1,4 @@
-# NVC Network GUI — 사용자/배포 매뉴얼
+# NVC NetHub — 사용자/배포 매뉴얼
 
 GUI Version 0.3 — 05/30/2026  
 대상: 뉴비전 교회 네트워크 운영팀
@@ -369,7 +369,7 @@ git push origin main
 ### 10-4. 팀원 배포 이메일 템플릿
 
 ```
-제목: 뉴비전 네트워크 관리 GUI v0.3 배포 안내
+제목: 뉴비전 네트워크 NVC NetHub v0.3 배포 안내
 
 ■ 사전 준비 (관리자가 처리)
   - GitHub 계정 username을 알려주세요
@@ -398,7 +398,7 @@ git push origin main
 
   7. OTP 등록 (최초 1회)
      - QR 코드를 OTP 앱으로 스캔
-     - 앱에 "NVC Network GUI" 항목 생성
+     - 앱에 "NVC NetHub" 항목 생성
      - 6자리 코드 입력 → 로그인 완료
 
 ■ 이후 로그인: VPN → 실행 → 아이디/비밀번호/OTP 6자리
