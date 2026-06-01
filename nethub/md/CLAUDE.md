@@ -1,258 +1,151 @@
-# NVC Network 프로젝트 — Claude Code 지침
+# NVC NetHub — Claude Code 지침
+
+이 문서는 NVC NetHub 프로젝트에서 Claude Code가 지켜야 할 작업 기준입니다.
+세부 설계와 운영 정보는 `docs/` 문서를 우선 확인합니다.
 
 ## 커밋 규칙
 
-커밋 메시지에 `Co-Authored-By` 줄을 추가하지 않는다.
+- 커밋 메시지에 `Co-Authored-By` 줄을 추가하지 않습니다.
+- 민감 파일, 런타임 로그, 대용량 원본 로그는 커밋하지 않습니다.
+- 문서 변경 후 사용자가 push를 요청하면, 커밋·push 후 `scripts/sync.ps1` 실행 여부를 확인합니다.
 
-## Sync 규칙
+## 문서 동기화
 
-`docs/` 아래 md 파일을 수정한 경우 커밋·push 후 반드시 `scripts/sync.ps1`을 실행한다.
-sync는 `docs/*.md` + 루트 `CLAUDE.md` + `README.md` → `nvc_public/nethub/md/` 로 복사 후 자동 push한다.
+`docs/` 아래 MD 파일, 루트 `README.md`, 루트 `CLAUDE.md`를 수정한 경우 공개 문서 저장소 동기화가 필요합니다.
+
+```powershell
+.\scripts\sync.ps1
+```
+
+동기화 대상은 `nvc_public/nethub/md/`입니다.
+
+코드 변경 이후 문서 반영 대상을 점검하려면 다음 스크립트를 사용합니다.
+
+```powershell
+.\scripts\mdreport.ps1
+```
+
+이 스크립트는 마지막 MD 기준점 이후의 코드 변경을 확인하고 `runtime/reports/mdreport_change_report.md`에 AI용 변경점 리포트를 생성합니다.
+
+사용자가 AI 작업 창에서 `mdupdate`라고 요청하면, 먼저 `runtime/reports/mdreport_change_report.md`를 읽고 그 리포트에 적힌 변경 파일과 확인 대상 MD를 기준으로 문서를 업데이트합니다.
+
+MD 업데이트 운영 순서:
+
+1. `scripts/mdreport.ps1`로 AI용 변경점 리포트를 생성합니다.
+2. AI 작업 창에서 `mdupdate`라고 요청해 실제 MD를 수정합니다.
+3. 사용자가 검토한 뒤 `push all`을 요청합니다.
+4. push 완료 후 `scripts/sync.ps1`로 public MD를 동기화합니다.
 
 ## Push 규칙
 
-사용자가 "push all" 또는 "push"를 요청하면 아래 4개 저장소를 모두 push한다.
+사용자가 `push` 또는 `push all`을 요청하면 아래 4개 저장소를 확인합니다.
+변경사항이 있는 저장소만 커밋 후 push하고, 변경이 없으면 건너뜁니다.
 
 | 저장소 | 경로 | Remote |
 |--------|------|--------|
-| nvc_nethub | `c:/Projects/nvc_nethub` | origin/main |
-| nvc_public | `c:/Projects/nvc_public` | origin/main |
-| nvc_security | `c:/Projects/nvc_security` | origin/main |
-| nvc_release | `c:/Projects/nvc_release` | origin/main |
+| `nvc_nethub` | `C:\Projects\nvc_nethub` | `origin/main` |
+| `nvc_public` | `C:\Projects\nvc_public` | `origin/main` |
+| `nvc_security` | `C:\Projects\nvc_security` | `origin/main` |
+| `nvc_release` | `C:\Projects\nvc_release` | `origin/main` |
 
-각 저장소에 변경사항이 있으면 커밋 후 push, 없으면 건너뛴다.
-
-`nvc_nethub` push 시 `.claude/settings.json`, `.claude/nvc_nethub.code-workspace` 등 `.claude/` 하위 파일도 함께 스테이징하여 커밋에 포함한다.
-
----
+`nvc_nethub` push 시 `.claude/` 하위 변경도 확인하되, 로컬 민감 경로나 백업 폴더 경로가 포함되면 커밋하지 않습니다.
 
 ## 프로젝트 구조
 
-```
+```text
 nvc_nethub/
-├── CLAUDE.md             ← AI 지침 (이 파일)
-├── README.md             ← GitHub repo 소개
-├── .claude/              ← Claude Code 설정
-├── .vscode/
-├── .gitignore
-│
-├── source/               ← nethub GUI (Python/Tkinter)
-│   ├── main.py           ← 진입점 (NetworkGuiApp 클래스) — GUI_VERSION = "Version 0.3  05/30/2026"
-│   ├── modules/          ← 기능 모듈 (아래 모듈 구조 참조)
-│   ├── config/           ← 런타임 설정 (일부 gitignore)
-│   │   ├── app_config.json     ← git 포함
-│   │   ├── ap_inventory.json   ← git 포함 (AP 29대)
-│   │   ├── ssh_targets.example.json ← git 포함
-│   │   ├── users.json          ← git 제외
-│   │   └── ssh_targets.json    ← git 제외
-│   ├── assets/           ← 이미지 리소스
-│   ├── tools/            ← 빌드 도구
-│   └── requirements.txt
-│
-├── elk/                  ← NAS ELK Stack
-│   ├── compose.yaml      ← Docker Compose (ES + Kibana + Logstash)
-│   ├── logstash/pipeline/logstash.conf  ← 활성 파이프라인 (V27)
-│   └── source/           ← 구버전 conf 히스토리
-│
-├── docs/                 ← AI context 문서 (자동 로드)
-│   ├── aiguide.md        ← AI 협업 구조
-│   ├── elk.md            ← ELK 작업 지침 (V27 베이스라인, RCA, 검증)
-│   ├── nethub.md         ← nethub SW 설계
-│   ├── efg.md            ← EFG 장비 참조
-│   └── manual.md         ← 사용자/배포 매뉴얼
-│
-├── scripts/              ← PowerShell 스크립트
-│   ├── run.ps1           ← GUI 실행 (venv 자동 생성)
-│   └── sync.ps1          ← nvc_nethub → nvc_public MD 동기화
-│
-└── runtime/              ← 런타임 데이터 (git 제외)
-    ├── logs/raw/         ← NAS 동기화 JSONL 캐시
-    ├── exports/          ← Log Export 결과
-    ├── mca_dumps/        ← AP mca-dump 원본
-    └── operations.log
+├── README.md
+├── CLAUDE.md
+├── source/               # NVC NetHub 소스
+│   ├── main.py
+│   ├── modules/
+│   ├── config/
+│   ├── assets/
+│   └── tools/
+├── elk/                  # NAS ELK Stack 설정
+├── docs/                 # 운영 및 개발 문서
+├── scripts/              # 실행, 빌드, 동기화 스크립트
+├── runtime/              # 로컬 런타임 데이터, Git 제외
+└── backup/               # 로컬 보관본, Git 제외
 ```
 
----
+## 작업 전 확인
 
-## 작업 전 필수 확인
+### NVC NetHub 작업
 
-### ELK 작업 시
-1. `docs/elk.md` — V27 베이스라인, 파이프라인 섹션 맵, RCA 모델, 감지 키워드, 보호구간, 검증 체크리스트
-2. `elk/logstash/pipeline/logstash.conf` — 활성 파이프라인 코드
+1. `source/main.py`
+2. `source/modules/models.py`
+3. `source/config/app_config.json`
+4. `docs/nethub.md`
+5. 관련 모듈 파일
 
-### nethub (SW) 작업 시
-1. `source/modules/models.py` — 핵심 데이터 모델
-2. `source/main.py` — NetworkGuiApp 클래스 (탭 빌드 메서드 포함)
-3. `source/config/app_config.json` — 앱 설정
-4. 상세 설계/모듈 참조: `docs/nethub.md`
+### ELK 작업
 
----
+1. `docs/elk.md`
+2. `elk/logstash/pipeline/logstash.conf`
 
-## 핵심 제약사항
+### EFG/AP 기준 정보 작업
+
+1. `docs/efg.md`
+2. `source/config/ap_inventory.json`
+
+## 핵심 제약
+
+### NVC NetHub
+
+- Python/Tkinter 기반 로컬 관리 도구입니다.
+- 기능 변경은 안정적인 작은 단위로 진행합니다.
+- 사용자 계정과 SSH 접속 정보는 Git에 포함하지 않습니다.
+- 실제 인증 원본은 `newvisionchurch/nvc_security`의 `nethub/users.json` 기준입니다.
+- 역할명은 `admin`, `manager`, `member`, `guest` 기준입니다.
 
 ### ELK
-- `input`, `output`, 기본 syslog grok(섹션 2), observer/dataset(섹션 4) — **보호된 baseline, 수정 금지**
-- 변경은 반드시 소규모 델타 (new `if` 블록 추가, 기존 블록 수정 금지)
-- 한 번에 1개 기능만 추가
 
-### nethub SW
-- Python + Tkinter (로컬 PC 도구, 웹 아님)
-- 안정적인 변경만, 한 번에 하나씩
-- `source/config/users.json` — git 제외 (bcrypt 해시, TOTP secret)
-- `source/config/ssh_targets.json` — git 제외 (실제 SSH 정보)
-- 런타임 데이터: `C:\Projects\nvc_nethub\runtime\` (`workspace_root_windows` in app_config.json)
+- `input`, 기본 syslog grok, observer/dataset, output 구조는 보호 구간입니다.
+- Logstash 변경은 기존 블록을 크게 바꾸지 않고 작은 delta로 작성합니다.
+- 새 분류 규칙은 기존 동작을 깨지 않도록 `unclassified` guard를 유지합니다.
 
-### 공통
-- 비밀번호, API 키, `.env` 절대 커밋 금지
-- 대용량 로그 파일 커밋 금지
+### 보안
 
----
+- `.env`, 비밀번호, PAT, API Key, private key는 절대 커밋하지 않습니다.
+- `source/config/users.json`, `source/config/ssh_targets.json`, `source/config/credentials.enc`는 Git 제외 대상입니다.
+- `runtime/`, `backup/`, `nvc_nethub_secure_backup/`는 Git 제외 대상입니다.
 
-## ELK 현재 상태 (V27)
+## 문서 작성 기준
 
-| 항목 | 값 |
-|------|----|
-| 버전 | ELK 7.17.10 (Docker Compose, NAS) |
-| 입력 | UDP `51415` |
-| 인덱스 | `unifi-network-v27-{ap,low,noise}-*` |
-| JSONL 출력 | NAS `logstash/outputs/{ap,low,noise}/YYYY/M/D/partNNNN` |
-| 파이프라인 | `elk/logstash/pipeline/logstash.conf` |
+- 사용자-facing 명칭은 `NVC NetHub`로 통일합니다.
+- 고정 애플리케이션 버전은 일반 문서 본문에 반복 기재하지 않습니다.
+- 실제 버전 확인이 필요하면 `source/main.py`의 버전 상수 또는 Git tag를 확인합니다.
+- 경로, 설정 키, 파일명은 백틱으로 감쌉니다.
+- 중복 설명은 줄이고 문서 역할을 분리합니다.
 
----
+## 주요 문서 역할
 
-## nethub SW 현재 상태 (v0.3)
-
-버전: `GUI_VERSION = "Version 0.3  05/30/2026"` (source/main.py)
-
-### 탭 구성 및 권한
-
-| 탭 | 서브탭 | 빌드 메서드 | 필요 권한 |
-|---|---|---|---|
-| AP Status | — | `_build_ap_remote_tab()` | 모든 사용자 |
-| EFG Remote | EFG SSH | `_build_efg_remote_tab()` | `can_view_efg_tab` |
-| EFG Remote | EFG API | `_build_unifi_api_tab()` | `can_view_efg_tab` |
-| Log Export | — | `_build_export_tab()` | `can_export` |
-| 동기화 | NAS ELK Sync | `_build_sync_tab()` | `can_sync_nas` |
-| 동기화 | 연결 현황 | `_build_settings_connection_tab()` | — |
-| 설정 | 일반/자동화/보안/사용자 | `_build_settings_*_tab()` | (사용자: `can_manage_users`) |
-
-### 역할 및 권한
-
-| 권한 | admin | operator | viewer |
-|------|:---:|:---:|:---:|
-| `can_reset_ap` | ✓ | 설정에 따름 | ✗ |
-| `can_sync_nas` | ✓ | ✓ | ✗ |
-| `can_export` | ✓ | ✓ | ✓ |
-| `can_view_efg_tab` | ✓ | ✓ | ✓ |
-| `can_manage_users` | ✓ | ✗ | ✗ |
-
-### 모듈 구조 (source/modules/)
-
-| 모듈 | 역할 |
+| 문서 | 역할 |
 |------|------|
-| `models.py` | 핵심 데이터 모델 (AccessPoint, StuckSummary, Workspace, SyncSettings, User) |
-| `constants.py` | 타임아웃, UI 색상, AP 모델 분류, 병렬 조회 상한 |
-| `auth.py` | bcrypt 로그인 + TOTP 2FA + 3단계 인증(GitHub→NAS→Local) + admin 해시 격리 |
-| `vpn_check.py` | TCP 소켓으로 VPN 연결 확인 (192.168.11.1:22) |
-| `nas_sync.py` | paramiko SFTP — NAS JSONL 로컬 캐시 동기화 (차분) |
-| `ap_count.py` | 날짜 범위별 AP Stuck 이벤트 집계 |
-| `ap_detail.py` | 문제 AP 상세 분석, Stuck 유형 분류 |
-| `ap_reset.py` | SSH 원격 reboot — EFG relay 경유 |
-| `ap_remote.py` | AP SSH 스캔 — mca-dump 파싱 + logread 진단 + ResetScore |
-| `efg_remote.py` | EFG 대시보드 — system/네트워크/트래픽/ARP 조회 |
-| `unifi_client.py` | UniFi Local API 클라이언트 (New API Key / Legacy) |
-| `log_export.py` | 조건별 로그 필터링 후 파일 저장 |
-| `ap_inventory.py` | AP 목록 관리 (ap_inventory.json 기반) |
-| `local_storage.py` | 런타임 폴더 생성·관리, app_config.json 로드 |
-| `report_writer.py` | operations.log에 사용자명·작업 기록 |
-| `keychain.py` | Windows Credential Manager (keyring 래퍼) |
-| `ssh_client.py` | paramiko 공통 — 패스워드/키 인증, PTY, relay |
-| `font_utils.py` | OS 폰트 감지 및 UI 전체 폰트 적용 |
-| `github_auth.py` | GitHub API HTTPS + PAT 인증, 파일 R/W |
-| `github_schedule.py` | AP Reset 예약 CRUD (nvc-auth/ap_reset_schedule.json) |
-| `github_feedback.py` | 팀원 게시판 CRUD (nvc-auth/feedback.json) |
-| `diagram_viewer.py` | Block Diagram 11장 슬라이드 팝업 뷰어 |
-| `credentials.py` | NAS 자격증명 Fernet 암호화 저장 |
+| `README.md` | 프로젝트 개요와 빠른 시작 |
+| `CLAUDE.md` | Claude Code 작업 기준 |
+| `docs/nethub.md` | NVC NetHub 설계 참조 |
+| `docs/manual.md` | 사용자 매뉴얼 |
+| `docs/elk.md` | ELK 운영 및 Logstash 작업 지침 |
+| `docs/efg.md` | EFG/AP 기준 정보 |
+| `docs/release.md` | 배포 절차 |
+| `docs/aiguide.md` | 저장소 및 AI 협업 구조 |
 
-### AP Status 탭 — Stuck 판단 기준
+## Codex 문서 확인 순서
 
-| Stuck 카운트 | 상태 색상 |
-|-------------|----------|
-| 0 | Healthy (Green) |
-| 1~2 | Warning (Yellow) |
-| 3~9 | Suspect (Orange) |
-| 10+ | Critical (Red) |
+Codex는 매 턴 모든 MD를 자동으로 읽는다고 가정하지 않습니다.
+작업을 시작할 때는 요청 성격에 따라 아래 문서를 우선 확인합니다.
 
-임계값: `app_config.json` → `ap_stuck.status_thresholds`
+| 작업 유형 | 우선 확인 문서 |
+|-----------|----------------|
+| 전체 프로젝트 파악 | `README.md`, `CLAUDE.md` |
+| NVC NetHub 코드 작업 | `CLAUDE.md`, `docs/nethub.md`, 관련 `source/` 파일 |
+| ELK / Logstash 작업 | `CLAUDE.md`, `docs/elk.md`, `elk/logstash/pipeline/logstash.conf` |
+| EFG/AP 기준 정보 작업 | `docs/efg.md`, `source/config/ap_inventory.json` |
+| 사용자 매뉴얼 작업 | `docs/manual.md`, 실제 화면 코드 |
+| 배포 작업 | `docs/release.md`, `scripts/build.ps1`, `scripts/sync.ps1` |
+| 저장소 / push / sync 작업 | `CLAUDE.md`, `docs/aiguide.md` |
+| `mdupdate` 요청 | `runtime/reports/mdreport_change_report.md` |
 
-### AP Status 탭 — 진단 컬럼
-
-| 컬럼 | 소스 | 설명 |
-|------|------|------|
-| ELK Stuck | ELK JSONL 캐시 | 날짜 범위 내 Stuck 이벤트 수 |
-| 로그오류 | `logread \| grep -cE` | 현재 부팅 세션 내 오류 패턴 수 |
-| DevReset | `logread WAL_DBGID_DEV_RESET` | AC Pro 6.8.x 버그 감지 수 |
-| 재시작2G/5G | `athstats.ast_ath_reset` | 드라이버 레벨 무선 리셋 누적 |
-| VAP지연2G/5G | `athstats.timeout_waiting_for_vap_cnt` | VAP 초기화 타임아웃 누적 |
-| CU2G%/CU5G% | `athstats.cu_total` | 채널 이용률 |
-| Client2G/5G | `radio_table[*].num_sta` | 연결 클라이언트 수 |
-| Ch 2G/5G/6G | UniFi API | 채널 번호 |
-| BW 2G/5G/6G | UniFi API | 채널 폭 MHz |
-| CPU% / Mem% | mca-dump | CPU / 메모리 사용률 |
-| Uptime | mca-dump | 마지막 재부팅 이후 경과 시간 |
-| 응답(ms) | SSH 왕복 시간 | mca-dump 전체 응답 시간 |
-
-임계값 초과 시 셀 앞에 `⚠` 표시. `app_config.json` → `stuck_thresholds`에 저장.
-
-### AP Reset — EFG Relay 구조
-
-```
-GUI (paramiko) → EFG (OpenSSH) → sshpass → AP (Dropbear)
-```
-
-- `ssh_client.py` → `run_ssh_via_relay()` 사용
-- EFG에 `sshpass` 설치 필요
-- AP에 직접 paramiko 패스워드 인증 불가 (Dropbear 호환성 문제)
-
-### SSH 접속 구조
-
-| 대상 | 방식 | PTY |
-|------|------|-----|
-| NAS (Synology) | paramiko SSHClient, 키 인증 | 불필요 |
-| EFG (OpenSSH) | paramiko Transport, 패스워드 인증 | 불필요 |
-| AP (Dropbear) 직접 | paramiko Transport, 패스워드 인증 | **필요** |
-| AP via EFG relay | EFG에서 sshpass+ssh | 불필요 |
-
-### 주요 설정 파일
-
-| 파일 | 내용 | git |
-|------|------|-----|
-| `source/config/app_config.json` | workspace_root, nas_sync, vpn_check, stuck_thresholds, unifi_api, startup_actions | ✅ |
-| `source/config/ap_inventory.json` | AP 29대 목록 (id, name, ip, model, site, floor, location, keywords) | ✅ |
-| `source/config/ssh_targets.example.json` | SSH 설정 예제 | ✅ |
-| `source/config/users.json` | 사용자 계정 (bcrypt 해시, TOTP secret) | ❌ |
-| `source/config/ssh_targets.json` | NAS/EFG/AP SSH 접속 정보 | ❌ |
-
-### GitHub 연동
-
-- Org/Repo: `newvisionchurch/nvc-auth`
-- PAT: Windows Keychain (`keyring`) — `KEYCHAIN_SERVICE = "nvc_auth_github"`
-- 파일: `ap_reset_schedule.json` (예약), `feedback.json` (게시판)
-- `users.json` 원본도 nvc-auth에 보관 (3단계 인증 1순위)
-
-### 인증 흐름 (3단계)
-
-```
-1순위: GitHub (nvc-auth/users.json)
-2순위: NAS (SFTP 경유 users.json)
-3순위: Local (source/config/users.json)
-```
-
-로드 성공 시 로컬 자동 백업. 관리자 등록 PC가 아니면 admin `password_hash`·`totp_secret` 제거 후 저장.
-
-### 실행 방법
-
-```powershell
-# scripts/run.ps1 — venv 자동 생성 후 source/main.py 실행
-.\scripts\run.ps1
-```
+반드시 지켜야 하는 작업 규칙은 `CLAUDE.md`에 기록합니다.

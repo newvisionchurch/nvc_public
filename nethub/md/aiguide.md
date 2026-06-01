@@ -1,141 +1,150 @@
-# AI 협업 구조 가이드
+# NVC NetHub — AI 협업 구조
 
-뉴비전 교회 NVC Network 프로젝트의 GitHub 저장소 구조와 AI 협업 방식.
+이 문서는 NVC NetHub 프로젝트의 저장소 역할, AI 작업 범위, 문서 동기화 기준을 정리합니다.
 
----
-
-## GitHub 계정 / 저장소 구조
+## 저장소 구조
 
 | 저장소 | 접근 | 용도 |
 |--------|------|------|
-| `newvisionchurch/nvc_nethub` | Private | 메인 코드 (SW, ELK, 문서) |
-| `newvisionchurch/nvc-auth` | Private | 인증 데이터 (users.json, ap_reset_schedule.json, feedback.json) |
-| `newvisionchurch-it/nvc_release` | Private | 배포 패키지 (exe/source zip) |
-| `newvisionchurch/nvc_public` | Public | MD 문서 공개 사본 (nvcpush로 동기화) |
-| `newvisionchurch/nvc_security` | Private | 보안 감사 데이터 |
+| `newvisionchurch/nvc_nethub` | Private | 메인 코드, ELK 설정, 운영 문서 |
+| `newvisionchurch/nvc_security` | Private | 인증 데이터, AP Reset 예약, 게시판 데이터 |
+| `newvisionchurch-it/nvc_release` | Private | 배포 패키지 |
+| `newvisionchurch/nvc_public` | Public | 공개 MD 문서 사본 |
 
-커밋 작성자: Chris Jeong `<chris.jeong7@gmail.com>`
+## 작업 범위
 
----
+Claude Code는 이 저장소에서 다음 작업을 담당합니다.
 
-## Claude Code 역할
-
-Claude Code는 이 프로젝트의 **코딩/구현/문서 전담** AI이다.
-
-**작업 범위:**
-- `source/` Python/Tkinter GUI 코드 작성 및 수정
-- `elk/logstash/pipeline/logstash.conf` Logstash 파이프라인 수정 (small delta)
-- `docs/` AI context 문서 업데이트
+- `source/` NVC NetHub 코드 작성 및 수정
+- `elk/logstash/pipeline/logstash.conf` Logstash 파이프라인 수정
+- `docs/`, `README.md`, `CLAUDE.md` 문서 정리
 - `source/config/ap_inventory.json` AP 인벤토리 관리
 - `scripts/` PowerShell 스크립트 작성
-- git commit / push (4개 repo)
+- 요청 시 4개 저장소 상태 확인, 커밋, push
 
-**Claude Code가 작업할 때 자동 로드되는 컨텍스트:**
-1. `CLAUDE.md` — 항상 자동 로드 (프로젝트 지침)
-2. `docs/*.md` — settings.json `importedFiles`로 자동 로드
+## 메인 저장소
 
----
-
-## 4개 저장소 역할 분리
-
-### nvc_nethub (Private) — 메인 개발 저장소
-
-```
-source/       ← Python GUI 소스
-elk/          ← ELK 설정 (compose.yaml, logstash.conf)
-docs/         ← AI context 문서
-scripts/      ← PowerShell 스크립트
-CLAUDE.md     ← Claude Code 지침
-README.md     ← GitHub 소개
+```text
+nvc_nethub/
+├── source/       # NVC NetHub 소스
+├── elk/          # ELK 설정
+├── docs/         # 운영 및 개발 문서
+├── scripts/      # 실행, 빌드, 문서 동기화
+├── README.md
+└── CLAUDE.md
 ```
 
-git 제외 파일:
-- `source/config/users.json` (bcrypt 해시, TOTP secret)
-- `source/config/ssh_targets.json` (SSH 접속 정보)
-- `runtime/` (로컬 캐시, 작업 파일)
+Git 제외 대상:
 
-### nvc-auth (Private) — 팀 공유 인증/데이터 저장소
+- `source/config/users.json`
+- `source/config/ssh_targets.json`
+- `source/config/credentials.enc`
+- `runtime/`
+- `backup/`
+- `nvc_nethub_secure_backup/`
 
-GUI가 GitHub API (HTTPS + PAT)로 직접 읽고 쓰는 파일:
+## 인증 및 팀 공유 데이터
 
-| 파일 | 내용 | 접근 방식 |
-|------|------|---------|
-| `users.json` | 사용자 계정 (bcrypt 해시, TOTP secret) | GUI 인증 원본 |
-| `ap_reset_schedule.json` | AP Reset 예약 및 이력 | GUI github_schedule.py |
-| `feedback.json` | 팀원 게시판 | GUI github_feedback.py |
+NVC NetHub는 GitHub API와 PAT를 사용해 `newvisionchurch/nvc_security`의 데이터를 읽고 씁니다.
 
-PAT 권한: `repo` (nvc-auth read/write). Windows Keychain 보관.
+| 파일 | 내용 | 사용 모듈 |
+|------|------|----------|
+| `nethub/users.json` | 사용자 계정, bcrypt hash, TOTP secret | `auth.py` |
+| `ap_reset_schedule.json` | AP Reset 예약 및 이력 | `github_schedule.py` |
+| `nethub/feedback.json` | 팀원 게시판 | `github_feedback.py` |
+| `nethub/admin_notes.json` | 관리자 게시판 | `github_feedback.py` |
 
-### nvc_release (Private) — 배포 저장소
+PAT는 Windows Keychain에 저장합니다.
 
-```
-releases/
-  v0.3/
-    win/    nvc_nethub_GUI_v0.3.zip      (PyInstaller exe)
-    source/ nvc_nethub_GUI_v0.3_source.zip (소스 패키지)
-```
+## 배포 저장소
 
-팀원은 이 repo에서 zip을 다운로드하여 설치한다.  
-접근: `newvisionchurch-it` 조직 멤버만.
+`newvisionchurch-it/nvc_release`는 팀원 배포 패키지를 보관합니다.
 
-### nvc_public (Public) — 공개 문서 저장소
-
-`scripts/sync.ps1` 실행 시 `nvc_nethub`의 모든 `.md` 파일 → `nvc_public/nethub/md/`로 복사.  
-GUI 타이틀 바 [GUI 매뉴얼] / [GUI 개요] / [프로젝트 개요] 버튼이 이 경로의 파일을 직접 읽는다.
-
-```
-app_config.json → "md_base_path": "C:\\Projects\\nvc_public\\nvc_network\\md"
+```text
+nvc_release/
+└── nethub/
+    └── vX.X/
+        ├── windows/
+        └── source/
 ```
 
----
+정확한 배포 버전은 Git tag와 배포 폴더명을 기준으로 확인합니다.
 
-## AI context 문서 자동 로드 구조
+## 공개 문서 저장소
 
+`scripts/sync.ps1`은 메인 저장소의 MD 문서를 `nvc_public/nethub/md/`로 복사하고 push합니다.
+
+NVC NetHub의 문서 버튼은 `source/config/app_config.json`의 `md_base_path`를 기준으로 문서를 읽습니다.
+
+```json
+"md_base_path": "C:\\Projects\\nvc_public\\nethub\\md"
 ```
-CLAUDE.md (항상 자동 로드)
-  ├── docs/elk.md     (ELK 작업 시 참조)
-  ├── docs/nethub.md  (SW 작업 시 참조)
-  ├── docs/efg.md     (EFG 장비 참조)
-  ├── docs/manual.md  (사용자/배포 매뉴얼)
-  └── docs/aiguide.md (이 파일 — AI 협업 구조)
+
+## 문서 자동 로드
+
+AI 작업 시 우선 확인할 문서 구조입니다.
+
+```text
+CLAUDE.md
+├── docs/nethub.md
+├── docs/elk.md
+├── docs/efg.md
+├── docs/manual.md
+├── docs/release.md
+└── docs/aiguide.md
 ```
 
-자동 로드: `.claude/settings.json` → `importedFiles` 설정.
+Codex는 모든 MD를 매 턴 자동으로 읽는다고 가정하지 않습니다.
+작업 성격에 맞게 `CLAUDE.md`와 관련 `docs/*.md`를 먼저 확인한 뒤, 실제 코드와 설정 파일을 대조합니다.
 
----
+| 작업 유형 | 우선 확인 문서 |
+|-----------|----------------|
+| NVC NetHub 코드 | `CLAUDE.md`, `docs/nethub.md` |
+| ELK | `CLAUDE.md`, `docs/elk.md` |
+| EFG/AP 기준 | `docs/efg.md` |
+| 사용자 안내 | `docs/manual.md` |
+| 배포 | `docs/release.md` |
+| 저장소 운영 | `CLAUDE.md`, `docs/aiguide.md` |
+| MD 리포트 반영 | `runtime/reports/mdreport_change_report.md` |
 
 ## 보안 원칙
 
-| 항목 | Private (nvc_nethub) | Public (nvc_public) |
-|------|----------------------|---------------------|
-| 실제 코드 | ✅ | ❌ |
-| IP/MAC 정보 | ✅ | ❌ |
-| 원본 로그 | ❌ (runtime/ git 제외) | ❌ |
-| bcrypt 해시 | ❌ (nvc-auth로 이동) | ❌ |
-| MD 문서 | ✅ 원본 | ✅ 사본 |
-| 비밀번호/API 키 | 절대 커밋 금지 | 절대 금지 |
-
-git 제외 파일 체크리스트:
-- `source/config/users.json` — bcrypt 해시, TOTP secret
-- `source/config/ssh_targets.json` — NAS/EFG/AP SSH 접속 정보
-- `runtime/` — 로컬 캐시, 작업 파일
-
----
+| 항목 | Private | Public |
+|------|---------|--------|
+| 코드 | `nvc_nethub` | 제외 |
+| 공개용 MD | `nvc_nethub` 원본 | `nvc_public` 사본 |
+| 인증 데이터 | `nvc_security` | 제외 |
+| 비밀번호/API Key/PAT | 제외 | 제외 |
+| 런타임 로그 | 제외 | 제외 |
 
 ## Push 워크플로우
 
-```
-Claude Code 작업 완료
-  ↓
-git commit (nvc_nethub)
-  ↓
-"push" 요청
-  ↓ Claude Code가 4개 repo 순서대로 처리
-  nvc_nethub  → origin/main
-  nvc_public  → origin/main (변경 있을 때)
-  nvc_security → origin/main (변경 있을 때)
-  nvc_release → origin/main (변경 있을 때)
+사용자가 `push` 또는 `push all`을 요청하면 다음 순서로 진행합니다.
 
-문서 변경 후 nvc_public 동기화가 필요하면:
-  .\scripts\sync.ps1
+1. 4개 저장소의 `git status` 확인
+2. 변경 있는 저장소만 커밋
+3. 메인 저장소 문서 변경이 있으면 `scripts/sync.ps1` 필요 여부 확인
+4. 각 저장소 push
+5. 최종 상태 확인
+
+## MD 리포트와 업데이트 워크플로우
+
+코드 변경 이후 어떤 문서를 확인해야 하는지 보려면 `scripts/mdreport.ps1`을 사용합니다.
+
+```powershell
+.\scripts\mdreport.ps1
+```
+
+운영 순서:
+
+1. `mdreport.ps1`이 마지막 MD 기준점 이후의 변경을 보고 AI용 리포트를 생성합니다.
+2. AI 작업 창에서 `mdupdate`라고 요청합니다.
+3. AI는 `runtime/reports/mdreport_change_report.md`를 읽고 실제 MD를 수정합니다.
+4. 사용자가 변경 내용을 검토한 뒤 `push all`을 요청합니다.
+5. push 완료 후 `scripts/sync.ps1`로 public MD를 동기화합니다.
+
+현재 HEAD를 새 기준점으로 저장하려면 다음을 실행합니다.
+
+```powershell
+.\scripts\mdreport.ps1 -MarkBaseline
 ```

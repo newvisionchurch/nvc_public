@@ -1,4 +1,4 @@
-# ELK Stack — V27 AI 작업 지침 및 운영 참조
+# ELK Stack — 운영 및 작업 지침
 
 NAS Docker ELK 7.17.10. UniFi AP/EFG syslog 수집·분류·저장. AP Stuck RCA 지원.
 
@@ -220,7 +220,7 @@ DHCPNAK(                                                               → dhcp_
 
 ---
 
-## AI 변경 원칙
+## 변경 원칙
 
 1. **Small delta only** — new `if` 블록 추가, 기존 블록 수정 금지
 2. **한 번에 1개 기능** — 복수 problem_class 동시 추가 금지
