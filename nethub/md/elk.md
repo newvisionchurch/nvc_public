@@ -25,6 +25,9 @@ outputs/low/YYYY/M/D/unifi-network-v27-low-YYYY.MM.dd-part0001.jsonl
 outputs/noise/YYYY/M/D/unifi-network-v27-noise-YYYY.MM.dd-part0001.jsonl
 ```
 
+NVC NetHub는 NAS의 `outputs/ap/...` JSONL을 PC `runtime/logs/raw/`로 동기화한 뒤, 동기화 탭의 `ELK Stuck Record`에서 날짜별 AP Count를 저장합니다.
+AP Status의 `ELK Stuck Count`는 저장된 Record를 읽어 `누적`, `최고`, `평균` 방식으로 집계합니다.
+
 ---
 
 ## 파이프라인 섹션 맵
@@ -285,6 +288,19 @@ observer.type:ap AND event.problem_class:ap_stuck
 | 일부 구간만 같이 움직임 | system_issue는 일부 구간의 원인 |
 | system_issue 없이도 AP fault 다수 | AP 자체 / RF / 서비스 계층 별도 분석 |
 | rrm_scan_trigger 후 수분 내 vap_timeout/ch=0 | RRM이 AP stuck 원인 |
+
+## NVC NetHub Record 연동
+
+운영자가 AP Status에서 보는 `ELK Stuck` 값은 Logstash raw Log를 매번 직접 스캔한 값이 아니라, `ELK Stuck Record`에 저장된 날짜별 Count를 집계한 값입니다.
+
+| 단계 | 위치 | 설명 |
+|------|------|------|
+| Log 생성 | NAS ELK | Logstash가 AP 관련 JSONL을 `outputs/ap/YYYY/M/D/`에 저장 |
+| Log 동기화 | NVC NetHub 동기화 탭 | NAS JSONL을 PC `runtime/logs/raw/`로 복사 |
+| Record 생성 | NVC NetHub 동기화 탭 | 날짜별 AP Count를 `runtime/reports/elk_stuck_record/elk_stuck_records.json`에 저장 |
+| AP Status 반영 | NVC NetHub AP Status | 선택 날짜 범위와 집계 방식으로 `ELK Stuck` 컬럼 갱신 |
+
+Logstash 분류가 바뀌면 `event.problem_class`, `event.action`, AP 이름 추출 결과가 Record Count에 직접 영향을 줄 수 있으므로, 파이프라인 변경 후에는 NVC NetHub에서 해당 날짜 Record를 다시 생성해 확인합니다.
 
 ---
 

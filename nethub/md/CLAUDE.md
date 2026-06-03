@@ -35,6 +35,9 @@ MD 업데이트 운영 순서:
 2. AI 작업 창에서 `mdupdate`라고 요청해 실제 MD를 수정합니다.
 3. 사용자가 검토한 뒤 `push all`을 요청합니다.
 4. push 완료 후 `scripts/sync.ps1`로 public MD를 동기화합니다.
+5. sync까지 완료된 뒤 다음 기준점이 필요하면 `scripts/mdreport.ps1 -MarkBaseline`을 실행합니다.
+
+`scripts/build.ps1`은 배포 패키지 생성용입니다. 일반 문서 최신화 작업에서는 build를 실행하지 않고, 배포가 필요한 경우에만 `docs/release.md` 절차에 따라 별도 실행합니다.
 
 ## Push 규칙
 

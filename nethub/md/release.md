@@ -105,6 +105,29 @@ cd C:\Projects\nvc_nethub
 ```
 
 빌드 결과는 `nvc_release/nethub/[버전]/` 아래에 보관합니다.
+`scripts/build.ps1`은 exe/source 패키지 생성, `nvc_release` 복사, 관련 저장소 push까지 수행하는 배포용 스크립트입니다.
+일반 Markdown 최신화 작업은 `scripts/mdreport.ps1`, 채팅의 `mdupdate`, `push all`, `scripts/sync.ps1` 순서로 처리하며 build를 실행하지 않습니다.
+
+## 문서 최신화
+
+배포 전 코드 변경이 문서에 반영되었는지 확인합니다.
+
+```powershell
+.\scripts\mdreport.ps1
+```
+
+AI 작업 창에서 `mdupdate`를 요청하면 `runtime/reports/mdreport_change_report.md`와 실제 코드를 대조해 `README.md`, `CLAUDE.md`, `docs/*.md`를 업데이트합니다.
+문서 검토와 push가 끝난 뒤 public 문서 동기화가 필요하면 다음을 실행합니다.
+
+```powershell
+.\scripts\sync.ps1
+```
+
+동기화까지 완료된 뒤 다음 MD 기준점을 저장하려면 다음을 실행합니다.
+
+```powershell
+.\scripts\mdreport.ps1 -MarkBaseline
+```
 
 ## 문제 해결
 

@@ -42,10 +42,10 @@ NVC NetHub
 
 | 영역 | 기능 |
 |------|------|
-| AP Status | AP SSH 진단, ELK Stuck 집계, ResetScore 분류, AP Reset 예약 |
+| AP Status | AP SSH 진단, ELK Stuck Record 집계, ResetScore 분류, AP Reset 예약 |
 | EFG Remote | EFG SSH 대시보드, UniFi Controller API 탐색 |
 | Log Export | 날짜, AP, 유형, 키워드 조건으로 로그 저장 |
-| 동기화 | NAS JSONL 로그를 PC 로컬 캐시로 동기화 |
+| 동기화 | NAS JSONL 로그 동기화, 날짜별 ELK Stuck Record 생성 |
 | 설정 | 자동화, 보안, 사용자, 연결 상태 관리 |
 | 게시판 | 팀원 게시판, 관리자 게시판 |
 
@@ -66,10 +66,22 @@ cd C:\Projects\nvc_nethub
 runtime/
 ├── logs/raw/      # NAS 동기화 JSONL 캐시
 ├── exports/       # Log Export 결과
+├── reports/elk_stuck_record/
+│                  # 날짜별 ELK Stuck Record
 ├── mca_dumps/     # AP mca-dump 원본
 ├── api_probe/     # UniFi API probe 캐시
 └── operations.log # 운영 기록
 ```
+
+## ELK Stuck 운영 흐름
+
+`ELK Stuck Count`는 AP Status에서 raw Log를 매번 직접 스캔하지 않고, 동기화 탭의 `ELK Stuck Record`에 저장된 날짜별 Count를 읽어 집계합니다.
+
+1. 동기화 탭의 `NAS ELK Sync`에서 NAS JSONL Log를 PC로 동기화합니다.
+2. 같은 화면의 `ELK Stuck Record`에서 날짜별 Record를 생성합니다.
+3. AP Status의 `ELK Stuck Count`에서 선택 날짜 범위와 집계 방식(`누적`, `최고`, `평균`)으로 `ELK Stuck` 컬럼을 갱신합니다.
+
+시작 자동 실행에서 `동기화 후 집계`가 켜져 있으면 오늘 Log 동기화, 오늘 Record 생성, AP Status 집계가 순서대로 실행됩니다.
 
 ## 보안 원칙
 
@@ -103,3 +115,6 @@ runtime/
    AI는 `runtime/reports/mdreport_change_report.md`를 먼저 읽고 필요한 MD를 수정합니다.
 3. 변경 내용을 검토한 뒤 `push all`을 요청합니다.
 4. push 완료 후 `scripts/sync.ps1`로 public MD를 동기화합니다.
+5. 동기화까지 끝난 뒤 다음 기준점이 필요하면 `.\scripts\mdreport.ps1 -MarkBaseline`을 실행합니다.
+
+`scripts/build.ps1`은 배포 패키지를 만들 때 사용하는 별도 단계입니다. 일반 MD 최신화만 할 때는 `mdreport → mdupdate → push all → sync` 흐름을 사용합니다.
