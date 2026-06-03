@@ -58,6 +58,9 @@ cd C:\Projects\nvc_nethub
 .\scripts\run.ps1
 ```
 
+처음 실행하거나 GitHub 인증이 실패한 경우 시작 인증 화면에서 `GitHub PAT 입력`으로 새 PAT를 저장한 뒤 다시 시도합니다.
+PAT는 Windows Keychain에 저장되며, `newvisionchurch/nvc_security` 접근 권한이 필요합니다.
+
 ## 런타임 데이터
 
 `runtime/`은 Git에 포함하지 않습니다.

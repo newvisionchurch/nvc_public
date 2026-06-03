@@ -253,6 +253,11 @@ NVC NetHub 시작
 
 관리자 계정의 `password_hash`와 `totp_secret`은 관리자 등록 PC가 아닌 로컬 백업에서 제거합니다.
 
+GitHub PAT는 Windows Keychain에 저장합니다.
+시작 인증에서 GitHub 토큰이 없거나 `nvc_security` 로드에 실패하면 사용자는 시작 화면의 `GitHub PAT 입력` 버튼으로 새 PAT를 저장할 수 있습니다.
+저장 직후 GitHub 연결을 테스트하고 인증 캐시를 초기화한 뒤 인증 확인을 다시 실행합니다.
+기존 PAT가 만료되었거나 권한이 부족해 실패한 경우에는 로그인 화면에서도 PAT 입력칸을 다시 표시합니다.
+
 ## GitHub 연동
 
 | 데이터 | 저장소/파일 |
