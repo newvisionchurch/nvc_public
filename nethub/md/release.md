@@ -106,7 +106,8 @@ cd C:\Projects\nvc_nethub
 
 빌드 결과는 `nvc_release/nethub/[버전]/` 아래에 보관합니다.
 `scripts/build.ps1`은 exe/source 패키지 생성, `nvc_release` 복사, 관련 저장소 push까지 수행하는 배포용 스크립트입니다.
-일반 Markdown 최신화 작업은 채팅의 `mdupdate`, `push all`, `scripts/sync.ps1` 순서로 처리하며 build를 실행하지 않습니다.
+일반 Markdown 최신화 작업은 채팅의 `mdupdate`, `push all`, `sync` 순서로 처리하며 build를 실행하지 않습니다.
+릴리즈까지 진행할 때는 채팅에서 `mdupdate push all sync build`처럼 한 번에 요청할 수 있으며, AI는 문서 갱신, 커밋/push, 공개 문서 동기화, 배포 빌드 순서로 처리합니다.
 `mdupdate` 요청을 받으면 AI가 먼저 `scripts/mdreport.ps1`을 실행해 최신 리포트를 만든 뒤 문서를 수정합니다.
 
 ## 문서 최신화

@@ -36,10 +36,10 @@ NetworkGuiApp (source/main.py)
 | AP Status | - | AP SSH 진단, ELK Stuck Record 집계, ResetScore, AP Reset | 모든 사용자 |
 | EFG Remote | EFG SSH | EFG 시스템, 네트워크, 트래픽, ARP 조회 | `can_view_efg_tab` |
 | EFG Remote | EFG API | UniFi Controller read-only API 탐색 | `can_view_efg_tab` |
-| Log Export | - | 로컬 캐시 로그 조건 검색 및 저장 | `can_export` |
 | 동기화 | NAS ELK Sync | NAS JSONL 로그 동기화, ELK Stuck Record 생성/조회/삭제 | `can_sync_nas` |
 | 동기화 | AP Sync | AP mca-dump 파일 관리 | 모든 사용자 |
 | 동기화 | 연결 현황 | NAS, UniFi API 연결 테스트 | 모든 사용자 |
+| Log Export | - | 로컬 캐시 로그 조건 검색 및 저장 | `can_export` |
 | 설정 | 일반 | 폰트, 정렬, 임계값, 색상 | 모든 사용자 |
 | 설정 | 자동화 | 시작 시 자동 실행 항목 | 모든 사용자 |
 | 설정 | 보안 | 경로, Keychain, GitHub PAT, UniFi API Key | 모든 사용자 |
@@ -167,10 +167,15 @@ AP 직접 paramiko password 인증은 Dropbear 호환성 문제로 실패할 수
   → 권한 확인
   → AP/EFG 자격증명 확인
   → 예약 팝업
+  → GitHub 예약 저장
   → 순차 reboot
   → operations.log 기록
   → GitHub history 기록
 ```
+
+예약 관리는 `newvisionchurch/nvc_security:ap_reset_schedule.json`을 기준으로 표시합니다.
+`예약 목록`은 `pending`/`running` 상태만 보여 주고 취소할 수 있으며, `AP Reset 이력`은 완료된 AP별 실행 결과를 최신순으로 보여 줍니다.
+각 행을 선택하면 대상 AP 총수, 실행 시각, 결과 메시지 등 상세 내용이 하단에 표시됩니다.
 
 ## ELK Stuck Record 설계
 
@@ -277,6 +282,8 @@ GitHub PAT는 Windows Keychain에 저장합니다.
 | `startup_actions.elk_count` | 시작 시 AP Status ELK Stuck Count 반영 여부 |
 | `startup_actions.elk_sync_first` | ELK Count 전에 NAS Log 동기화 수행 여부 |
 | `startup_actions.message_window` | 통합 메시지 창 자동 표시 여부 |
+| `startup_actions.message_window_auto_close` | 시작 자동 실행 완료 후 메시지 창 자동 닫기 여부 |
+| `startup_actions.message_window_auto_close_seconds` | 메시지 창 자동 닫기 대기 시간(초) |
 | `elk_stuck_record.aggregate_mode` | `sum`, `max`, `avg` 중 기본 집계 방식 |
 | `score_refresh` | 점수분류 Refresh 주기, 정렬, 자동 OFF 조건 |
 | `stuck_thresholds` | 테이블 경고 표시 임계값 |

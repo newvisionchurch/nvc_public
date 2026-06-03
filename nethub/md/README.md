@@ -42,12 +42,12 @@ NVC NetHub
 
 | 영역 | 기능 |
 |------|------|
-| AP Status | AP SSH 진단, ELK Stuck Record 집계, ResetScore 분류, AP Reset 예약 |
+| AP Status | AP SSH 진단, ELK Stuck Record 집계, ResetScore 분류, AP Reset 예약 및 이력 |
 | EFG Remote | EFG SSH 대시보드, UniFi Controller API 탐색 |
-| Log Export | 날짜, AP, 유형, 키워드 조건으로 로그 저장 |
 | 동기화 | NAS JSONL 로그 동기화, 날짜별 ELK Stuck Record 생성 |
+| Log Export | 날짜, AP, 유형, 키워드 조건으로 로그 저장 |
 | 설정 | 자동화, 보안, 사용자, 연결 상태 관리 |
-| 게시판 | 팀원 게시판, 관리자 게시판 |
+| 게시판 | 팀원 게시판, 관리자 게시판, 공지 팝업 |
 
 ## 실행
 
@@ -108,7 +108,8 @@ runtime/
 1. AI 작업 창에서 `mdupdate`라고 요청합니다.
    AI가 `scripts/mdreport.ps1`을 먼저 실행해 `runtime/reports/mdreport_change_report.md`를 갱신한 뒤 필요한 MD를 수정합니다.
 2. 변경 내용을 검토한 뒤 `push all`을 요청합니다.
-3. push 완료 후 `scripts/sync.ps1`로 public MD를 동기화합니다.
-4. 동기화까지 끝난 뒤 다음 기준점이 필요하면 `.\scripts\mdreport.ps1 -MarkBaseline`을 실행합니다.
+3. push 완료 후 `sync`를 요청하거나 `scripts/sync.ps1`로 public MD를 동기화합니다.
+4. 릴리즈 패키지가 필요하면 `build`를 요청하거나 `scripts/build.ps1`을 실행합니다.
+5. 동기화까지 끝난 뒤 다음 기준점이 필요하면 `.\scripts\mdreport.ps1 -MarkBaseline`을 실행합니다.
 
-`scripts/build.ps1`은 배포 패키지를 만들 때 사용하는 별도 단계입니다. 일반 MD 최신화만 할 때는 `mdupdate → push all → sync` 흐름을 사용합니다.
+`scripts/build.ps1`은 배포 패키지를 만들 때 사용하는 단계입니다. 일반 MD 최신화만 할 때는 `mdupdate → push all → sync` 흐름을 사용하고, 릴리즈까지 진행할 때는 `mdupdate → push all → sync → build` 순서로 처리합니다.
