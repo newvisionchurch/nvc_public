@@ -105,16 +105,10 @@ runtime/
 
 코드 변경 이후 MD를 최신화할 때는 아래 순서로 진행합니다.
 
-1. AI용 변경점 리포트를 만듭니다.
+1. AI 작업 창에서 `mdupdate`라고 요청합니다.
+   AI가 `scripts/mdreport.ps1`을 먼저 실행해 `runtime/reports/mdreport_change_report.md`를 갱신한 뒤 필요한 MD를 수정합니다.
+2. 변경 내용을 검토한 뒤 `push all`을 요청합니다.
+3. push 완료 후 `scripts/sync.ps1`로 public MD를 동기화합니다.
+4. 동기화까지 끝난 뒤 다음 기준점이 필요하면 `.\scripts\mdreport.ps1 -MarkBaseline`을 실행합니다.
 
-```powershell
-.\scripts\mdreport.ps1
-```
-
-2. AI 작업 창에서 `mdupdate`라고 요청합니다.
-   AI는 `runtime/reports/mdreport_change_report.md`를 먼저 읽고 필요한 MD를 수정합니다.
-3. 변경 내용을 검토한 뒤 `push all`을 요청합니다.
-4. push 완료 후 `scripts/sync.ps1`로 public MD를 동기화합니다.
-5. 동기화까지 끝난 뒤 다음 기준점이 필요하면 `.\scripts\mdreport.ps1 -MarkBaseline`을 실행합니다.
-
-`scripts/build.ps1`은 배포 패키지를 만들 때 사용하는 별도 단계입니다. 일반 MD 최신화만 할 때는 `mdreport → mdupdate → push all → sync` 흐름을 사용합니다.
+`scripts/build.ps1`은 배포 패키지를 만들 때 사용하는 별도 단계입니다. 일반 MD 최신화만 할 때는 `mdupdate → push all → sync` 흐름을 사용합니다.
