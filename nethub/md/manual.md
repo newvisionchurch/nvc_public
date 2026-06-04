@@ -38,14 +38,15 @@ Source 패키지는 프로젝트 루트에서 실행합니다.
 ### 로그인
 
 1. VPN을 먼저 연결합니다.
-2. GitHub PAT를 입력합니다. 최초 1회 입력 후 Keychain에 저장됩니다.
-3. 계정 ID와 비밀번호를 입력합니다.
-4. 최초 로그인 시 OTP QR 코드를 등록합니다.
-5. 이후 로그인 시 OTP 앱의 6자리 코드를 입력합니다.
+2. 시작 인증 화면에서 `1단계 VPN 접속 인증`을 통과합니다.
+3. `2단계 팀원 인증 (GitHub ID & PAT)`에서 본인 GitHub ID와 PAT를 입력합니다.
+4. 앱이 PAT의 GitHub ID, `nvc_security` 접근 권한, NetHub 사용자 정보의 GitHub ID 등록 여부를 확인합니다.
+5. 팀원 인증이 끝나면 NetHub 계정 ID와 비밀번호를 입력합니다.
+6. 로그인한 계정의 등록 GitHub ID와 현재 PAT의 GitHub ID가 같아야 개인 인증이 통과됩니다.
+7. 최초 로그인 시 OTP QR 코드를 등록하고, 이후 로그인 시 OTP 앱의 6자리 코드를 입력합니다.
 
-시작 인증 화면에서 `GitHub (nvc_security) — 토큰 없음` 또는 `로드 실패`가 표시되면 `GitHub PAT 입력`을 눌러 새 PAT를 저장합니다.
-저장 후 앱이 GitHub 연결을 테스트하고, 성공하면 인증 확인을 다시 실행합니다.
-이미 저장된 PAT가 만료되었거나 권한이 부족한 경우에도 로그인 화면에 PAT 입력칸이 다시 표시됩니다.
+PAT는 로그인 화면이 아니라 시작 인증 화면에서만 입력합니다.
+GitHub ID가 등록되어 있지 않거나 PAT의 GitHub ID와 로그인 사용자의 GitHub ID가 다르면 로그인이 실패합니다.
 
 ### 화면 구성
 
@@ -260,4 +261,5 @@ AP 전체 조회도 켜져 있으면 AP별 진행 메시지는 `AP 조회 중...
 | ELK Stuck이 모두 0 | 해당 날짜 Record 없음 | 동기화 탭에서 NAS ELK Sync 후 ELK Stuck Record 생성 |
 | AP Reset 버튼 비활성 | 권한 없음 | 관리자에게 권한 요청 |
 | 게시판 오류 | GitHub PAT 만료 또는 권한 부족 | PAT 재입력 또는 권한 확인 |
-| GitHub 연결 실패 | PAT 없음, 만료, 권한 부족, 네트워크 문제 | 시작 화면의 `GitHub PAT 입력` 또는 설정 탭에서 PAT 재등록 |
+| GitHub 연결 실패 | PAT 없음, 만료, 권한 부족, 네트워크 문제 | 시작 화면의 `GitHub PAT 입력`으로 팀원 인증 재시도 |
+| 개인 인증 실패 | 로그인 사용자 GitHub ID와 PAT GitHub ID 불일치 | 본인 GitHub 계정의 PAT 입력 또는 관리자에게 GitHub ID 등록 요청 |

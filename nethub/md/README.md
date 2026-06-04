@@ -58,8 +58,8 @@ cd C:\Projects\nvc_nethub
 .\scripts\run.ps1
 ```
 
-처음 실행하거나 GitHub 인증이 실패한 경우 시작 인증 화면에서 `GitHub PAT 입력`으로 새 PAT를 저장한 뒤 다시 시도합니다.
-PAT는 Windows Keychain에 저장되며, `newvisionchurch/nvc_security` 접근 권한이 필요합니다.
+처음 실행하거나 GitHub 인증이 실패한 경우 시작 인증 화면에서 `GitHub PAT 입력`으로 본인 GitHub ID와 PAT를 입력합니다.
+PAT는 Windows Keychain에 저장되며, `newvisionchurch/nvc_security` 접근 권한과 NetHub 사용자 정보의 GitHub ID 등록이 필요합니다.
 
 ## 런타임 데이터
 
@@ -101,7 +101,8 @@ runtime/
 | `docs/manual.md` | 사용자 매뉴얼 |
 | `docs/elk.md` | ELK 운영 및 Logstash 작업 지침 |
 | `docs/efg.md` | EFG/AP 네트워크 기준 정보 |
-| `docs/release.md` | 배포 절차 |
+| `docs/관리자_안내.md` | 관리자 배포 및 팀원 등록 안내 |
+| `docs/사용자_안내.md` | 사용자 설치 및 첫 로그인 안내 |
 | `docs/aiguide.md` | AI 협업 및 저장소 운영 기준 |
 
 ## MD 리포트와 업데이트

@@ -237,8 +237,13 @@ NVC NetHub 시작
   → 개발자 등록 PC 여부 확인
   ├── 등록 PC: 자동 로그인
   └── 일반 PC:
-      → GitHub / NAS / Local 순서로 users.json 로드
+      → 1단계 VPN 접속 인증
+      → 2단계 팀원 인증: GitHub ID + PAT
+      → PAT 소유 GitHub ID 확인
+      → nvc_security users.json 로드
+      → users.json의 github_username 등록 여부 확인
       → bcrypt 검증
+      → 로그인 사용자 github_username과 PAT GitHub ID 비교
       → TOTP 등록 또는 인증
       → 메인 화면 표시
 ```
@@ -254,9 +259,10 @@ NVC NetHub 시작
 관리자 계정의 `password_hash`와 `totp_secret`은 관리자 등록 PC가 아닌 로컬 백업에서 제거합니다.
 
 GitHub PAT는 Windows Keychain에 저장합니다.
-시작 인증에서 GitHub 토큰이 없거나 `nvc_security` 로드에 실패하면 사용자는 시작 화면의 `GitHub PAT 입력` 버튼으로 새 PAT를 저장할 수 있습니다.
-저장 직후 GitHub 연결을 테스트하고 인증 캐시를 초기화한 뒤 인증 확인을 다시 실행합니다.
-기존 PAT가 만료되었거나 권한이 부족해 실패한 경우에는 로그인 화면에서도 PAT 입력칸을 다시 표시합니다.
+시작 인증에서 GitHub 토큰이 없거나 `nvc_security` 로드에 실패하면 사용자는 시작 화면의 `GitHub PAT 입력` 버튼으로 본인 GitHub ID와 PAT를 입력합니다.
+저장 직후 GitHub 계정 확인, `nvc_security` 접근 확인, `users.json`의 팀원 등록 여부를 확인하고 인증 캐시를 초기화한 뒤 인증 확인을 다시 실행합니다.
+로그인 화면은 개인 인증만 처리하며 PAT를 직접 받지 않습니다.
+사용자 데이터에는 `github_username`을 저장하고, 로그인 후 현재 PAT의 GitHub ID와 로그인 사용자에게 등록된 GitHub ID가 일치해야 합니다.
 
 ## GitHub 연동
 
