@@ -3,47 +3,102 @@
 NVC NetHub는 뉴비전 교회 UniFi 네트워크 운영을 위한 Python/Tkinter 기반 로컬 관리 도구입니다.
 AP 상태 분석, ELK 로그 집계, EFG 원격 조회, AP Reset 예약, 팀 공유 게시판을 하나의 도구에서 제공합니다.
 
+버전은 `source/main.py`의 `GUI_VERSION` 상수로 관리합니다.
+
 ## 아키텍처
 
 ```text
-NetworkGuiApp (source/main.py)
-  ├── AP Status
-  │   ├── ap_remote.py      # AP SSH 진단, mca-dump, logread, ResetScore
-  │   ├── ap_count.py       # raw Log 기반 날짜별 Stuck Count 계산
-  │   ├── elk_stuck_record.py
-  │   │                     # 날짜별 ELK Stuck Record 저장 및 집계
-  │   ├── ap_detail.py      # AP 상세 분석
-  │   └── ap_reset.py       # EFG relay 기반 AP reboot
-  ├── EFG Remote
-  │   ├── efg_remote.py     # EFG SSH 대시보드
-  │   └── unifi_client.py   # UniFi API 탐색
-  ├── Log Export
-  │   └── log_export.py
-  ├── 동기화
-  │   └── nas_sync.py
-  └── 설정 / 사용자 / 게시판
-      ├── auth.py
-      ├── keychain.py
-      ├── github_auth.py
-      ├── github_schedule.py
-      └── github_feedback.py
+NetworkGuiApp (source/main.py — 13,400+ 줄, 단일 클래스)
+  │
+  ├── AP Status 탭
+  │   ├── ap_remote.py          # AP SSH 진단, mca-dump, logread, ResetScore
+  │   ├── ap_count.py           # raw Log 기반 날짜별 Stuck Count 계산
+  │   ├── elk_stuck_record.py   # 날짜별 ELK Stuck Record 저장 및 집계
+  │   ├── ap_detail.py          # AP 상세 팝업 분석
+  │   └── ap_reset.py           # EFG relay 기반 AP reboot
+  │
+  ├── EFG Remote 탭
+  │   ├── efg_remote.py         # EFG SSH 대시보드 (네트워크/트래픽/ARP/진단)
+  │   └── unifi_client.py       # UniFi Controller API 클라이언트
+  │
+  ├── 동기화 탭
+  │   └── nas_sync.py           # NAS JSONL 로그 SFTP 동기화
+  │
+  ├── Log Export 탭
+  │   └── log_export.py         # 조건별 로그 Export
+  │
+  ├── 설정 탭
+  │   ├── font_utils.py         # 폰트 설정
+  │   └── diagram_viewer.py     # 구조도 팝업
+  │
+  └── 공통 인프라
+      ├── models.py             # 핵심 dataclass 모델
+      ├── constants.py          # 타임아웃, 색상, AP 모델 상수
+      ├── auth.py               # 인증, bcrypt, TOTP, 역할/권한 관리
+      ├── credentials.py        # 팀 공유 비밀번호 TOTP 기반 암호화/복호화
+      ├── keychain.py           # Windows Keychain 래퍼 (NAS/EFG/AP/API Key)
+      ├── github_auth.py        # GitHub Contents API 파일 읽기/쓰기
+      ├── github_schedule.py    # AP Reset 예약 및 이력 관리
+      ├── github_feedback.py    # 팀원/관리자 게시판
+      ├── ssh_client.py         # paramiko 공통 SSH 처리 (직접/relay)
+      ├── vpn_check.py          # VPN 연결 확인
+      ├── ap_inventory.py       # AP 인벤토리 로드
+      ├── local_storage.py      # 런타임 폴더 생성 및 설정 로드
+      └── report_writer.py      # operations.log 기록
 ```
 
-## 탭 구성
+## GUI 탭 구성
 
-| 탭 | 서브탭 | 주요 기능 | 권한 |
-|----|--------|----------|------|
-| AP Status | - | AP SSH 진단, ELK Stuck Record 집계, ResetScore, AP Reset | 모든 사용자 |
-| EFG Remote | EFG SSH | EFG 시스템, 네트워크, 트래픽, ARP 조회 | `can_view_efg_tab` |
-| EFG Remote | EFG API | UniFi Controller read-only API 탐색 | `can_view_efg_tab` |
-| 동기화 | NAS ELK Sync | NAS JSONL 로그 동기화, ELK Stuck Record 생성/조회/삭제 | `can_sync_nas` |
-| 동기화 | AP Sync | AP mca-dump 파일 관리 | 모든 사용자 |
-| 동기화 | 연결 현황 | NAS, UniFi API 연결 테스트 | 모든 사용자 |
-| Log Export | - | 로컬 캐시 로그 조건 검색 및 저장 | `can_export` |
-| 설정 | 일반 | 폰트, 정렬, 임계값, 색상 | 모든 사용자 |
-| 설정 | 자동화 | 시작 시 자동 실행 항목 | 모든 사용자 |
-| 설정 | 보안 | 경로, Keychain, GitHub PAT, UniFi API Key | 모든 사용자 |
-| 설정 | 사용자 | 계정, 권한, TOTP, 개발자 PC | `can_manage_users` |
+### 메인 탭 (1단)
+
+| 탭 | 빌드 함수 | 주요 기능 |
+|----|----------|----------|
+| AP Status | `_build_ap_remote_tab` | AP SSH 진단, ELK Stuck, ResetScore, Reset |
+| EFG Remote | `_build_efg_remote_tab` / `_build_unifi_api_tab` | EFG SSH + API |
+| 동기화 | `_build_sync_tab` / `_build_sync_ap_tab` / `_build_settings_connection_tab` | NAS/AP 동기화, 연결 현황 |
+| Log Export | `_build_export_tab` | 로그 조건 검색 및 저장 |
+| 설정 | `_build_settings_all_tabs` | 앱 전체 설정 |
+
+### EFG Remote 서브탭 (2단)
+
+| 서브탭 | 빌드 함수 | 주요 기능 |
+|--------|----------|----------|
+| EFG SSH | `_build_efg_remote_tab` | 네트워크 상태, 트래픽, ARP, 진단 |
+| EFG API | `_build_unifi_api_tab` | UniFi Controller read-only API 탐색 |
+
+### 동기화 서브탭 (2단)
+
+| 서브탭 | 빌드 함수 | 주요 기능 |
+|--------|----------|----------|
+| NAS ELK Sync | `_build_sync_tab` | NAS JSONL 로그 동기화, ELK Record 생성/조회 |
+| AP Sync | `_build_sync_ap_tab` | AP mca-dump 파일 관리 |
+| 연결 현황 | `_build_settings_connection_tab` | NAS/UniFi API 연결 테스트 |
+
+### 설정 서브탭 (2단)
+
+| 서브탭 | 빌드 함수 | 접근 권한 | 주요 내용 |
+|--------|----------|----------|----------|
+| 일반 | `_build_settings_general_tab` | 모든 사용자 | 폰트, AP 설정, 점수 임계값, 색상 |
+| 자동화 | `_build_settings_automation_tab` | 모든 사용자 | 시작 시 자동 실행 항목 |
+| 보안 | `_build_data_paths_tab` | 모든 사용자 | ELK 로그 캐시 경로 |
+| 관리자 | `_build_admin_tab` | `can_manage_users` | 사용자 관리 + 보안 설정 서브탭 |
+
+### 관리자 탭 서브탭 (3단, `can_manage_users` 전용)
+
+| 서브탭 | 빌드 함수 | 주요 내용 |
+|--------|----------|----------|
+| 사용자 관리 | `_build_admin_tab` 내 | 계정/권한/TOTP/개발자 PC 관리 |
+| 보안 설정 | `_build_credentials_manager_section` | 팀 공유 비밀번호 (NAS/EFG/AP/EFG API) |
+
+### AP 상세 팝업 탭 (별도 팝업)
+
+| 탭 | 빌드 함수 | 내용 |
+|----|----------|------|
+| 요약 테이블 | `_build_detail_tab_summary` | AP 지표 요약 |
+| VAP / 라디오 | `_build_detail_tab_vap` | 무선 라디오 상세 |
+| 로그오류 | `_build_detail_tab_log` | logread 오류 패턴 |
+| DevReset | `_build_detail_tab_fwbug` | WAL_DBGID_DEV_RESET 이벤트 |
+| Raw mca-dump | `_build_detail_tab_raw` | 원본 mca-dump 텍스트 |
 
 ## 역할 및 권한
 
@@ -54,36 +109,36 @@ NetworkGuiApp (source/main.py)
 | `member` | 일반 팀원 | AP 조회, Export, EFG 조회 |
 | `guest` | 방문자 | 제한된 조회 |
 
-권한은 사용자별로 `permissions`에 저장하며, 역할 템플릿은 사용자 관리 화면에서 조정할 수 있습니다.
+권한은 사용자별 `permissions`에 저장하며, 역할 템플릿은 관리자 탭 → 역할 권한 설정에서 조정합니다.
 
 ## 주요 모듈
 
 | 모듈 | 역할 |
 |------|------|
-| `models.py` | 핵심 dataclass 모델 |
+| `models.py` | `AccessPoint`, `Workspace`, `User`, `SyncSettings`, `StuckSummary` 등 핵심 dataclass |
 | `constants.py` | 타임아웃, 색상, AP 모델 상수 |
-| `auth.py` | GitHub/NAS/Local 인증, bcrypt, TOTP, 역할 권한 |
+| `auth.py` | GitHub/NAS/Local 인증, bcrypt, TOTP, 역할 권한, dev_machines 관리 |
+| `credentials.py` | 팀 공유 비밀번호 TOTP secret 기반 암호화/복호화, 사용자별 암호화 저장 |
+| `keychain.py` | Windows Keychain 래퍼 (NAS/EFG/AP SSH 비밀번호, EFG API Key) |
 | `vpn_check.py` | VPN 연결 확인 |
-| `nas_sync.py` | NAS JSONL 로그 SFTP 동기화 |
+| `nas_sync.py` | NAS JSONL 로그 SFTP 동기화, 로컬 캐시 관리 |
 | `ap_count.py` | raw Log에서 날짜별 AP Stuck Count 계산 |
 | `elk_stuck_record.py` | 날짜별 Record 저장, Log signature 확인, Record 기반 집계 |
 | `ap_detail.py` | AP 상세 분석 |
-| `ap_remote.py` | AP SSH 진단과 ResetScore 계산 |
-| `ap_reset.py` | AP reboot 실행 |
-| `efg_remote.py` | EFG SSH 대시보드 |
+| `ap_remote.py` | AP SSH 진단과 ResetScore 계산 (mca-dump + logread) |
+| `ap_reset.py` | AP reboot 실행 (EFG relay 경유) |
+| `efg_remote.py` | EFG SSH 대시보드 (인터페이스/트래픽/ARP/진단) |
 | `unifi_client.py` | UniFi API 클라이언트 |
 | `log_export.py` | 조건별 로그 Export |
 | `ap_inventory.py` | AP 인벤토리 로드 |
 | `local_storage.py` | 런타임 폴더 생성 및 설정 로드 |
 | `report_writer.py` | `operations.log` 기록 |
-| `keychain.py` | Windows Keychain 래퍼 |
-| `ssh_client.py` | paramiko 공통 SSH 처리 |
+| `ssh_client.py` | paramiko 공통 SSH 처리 (직접 연결 + EFG relay) |
 | `font_utils.py` | 폰트 설정 |
-| `github_auth.py` | GitHub Contents API 파일 읽기/쓰기 |
+| `github_auth.py` | GitHub Contents API 파일 읽기/쓰기 (PAT 기반) |
 | `github_schedule.py` | AP Reset 예약 및 이력 |
 | `github_feedback.py` | 팀원/관리자 게시판 |
 | `diagram_viewer.py` | 구조도 팝업 |
-| `credentials.py` | NAS 저장 자격증명 암호화 |
 
 ## 핵심 데이터 모델
 
@@ -122,17 +177,20 @@ display_name: str
 role: str
 permissions: dict
 email: str
+github_username: str
 ```
 
 ## AP Status 흐름
 
 ```text
 전체 조회 / 선택 조회
+  → _ensure_ap_password()     # Keychain → credentials 복호화 → 세션 캐시
+  → _get_efg_relay()          # EFG SSH 비밀번호 확인
   → fetch_all_ap_info()
-  → fetch_ap_info()
-  → mca-dump 파싱
-  → logread 오류 패턴 집계
-  → ResetScore 계산
+    → fetch_ap_info() × N     # SSH relay 또는 직접 연결
+    → mca-dump 파싱
+    → logread 오류 패턴 집계
+    → ResetScore 계산
   → 테이블 표시
 ```
 
@@ -175,7 +233,6 @@ AP 직접 paramiko password 인증은 Dropbear 호환성 문제로 실패할 수
 
 예약 관리는 `newvisionchurch/nvc_security:ap_reset_schedule.json`을 기준으로 표시합니다.
 `예약 목록`은 `pending`/`running` 상태만 보여 주고 취소할 수 있으며, `AP Reset 이력`은 완료된 AP별 실행 결과를 최신순으로 보여 줍니다.
-각 행을 선택하면 대상 AP 총수, 실행 시각, 결과 메시지 등 상세 내용이 하단에 표시됩니다.
 
 ## ELK Stuck Record 설계
 
@@ -190,18 +247,7 @@ NAS ELK Sync
   → AP Status ELK Stuck Count에서 Record 집계
 ```
 
-과거 호환을 위해 `runtime/reports/manual/elk_stuck_records.json`도 읽을 수 있습니다.
-
-### 날짜별 Record
-
-Record는 날짜 단위로 저장되며, 각 날짜는 AP별 Count를 가집니다.
-AP 순서는 `source/config/ap_inventory.json`의 `AP01`부터 `AP29` 순서를 따릅니다.
-
-Record 목록 화면은 상단에 `누적`, `평균`, `최고` 요약 행을 먼저 표시하고, 그 아래에는 최근 날짜부터 날짜별 Count를 표시합니다.
-
 ### 집계 방식
-
-AP Status의 `ELK Stuck Count`는 선택한 날짜 범위의 Record를 AP별로 독립 집계합니다.
 
 | 방식 | 계산 |
 |------|------|
@@ -209,71 +255,92 @@ AP Status의 `ELK Stuck Count`는 선택한 날짜 범위의 Record를 AP별로 
 | 최고 | `max(ap_daily_counts)` |
 | 평균 | `int(sum(ap_daily_counts) / day_count)` |
 
-평균은 반올림하지 않고 소수점 이하를 버립니다.
-Record가 없는 날짜는 Count가 0처럼 반영될 수 있으므로, 사용자는 먼저 동기화 탭에서 Record를 생성해야 합니다.
-
-### Log 완전성 판단
-
-`elk_stuck_record.local_log_signature()`는 날짜별 Log 파일 상태를 요약합니다.
-
-| 항목 | 의미 |
-|------|------|
-| `file_count` | 해당 날짜 Log 파일 수 |
-| `total_bytes` | 전체 파일 크기 |
-| `latest_mtime` | 가장 최근 수정 시각 |
-
-같은 날짜의 signature가 여러 번 동일하면 Record를 안정 상태로 봅니다.
-확인 횟수는 `nas_sync.record_stable_confirm_count`이며 기본값은 `3`입니다.
-오늘 날짜는 Log가 계속 증가할 수 있으므로 다시 Count 대상이 될 수 있습니다.
-
-PC에 해당 날짜 Log가 없으면 해당 날짜 Record도 없어야 합니다.
-`purge_records_without_logs()`는 Log가 없는 날짜의 Record를 정리합니다.
-
 ## 인증 설계
+
+모든 사용자(admin 포함)가 동일한 7단계 인증을 거칩니다. 개발자 등록 PC만 예외로 전체 skip합니다.
 
 ```text
 NVC NetHub 시작
   → VPN 확인
-  → 개발자 등록 PC 여부 확인
-  ├── 등록 PC: 자동 로그인
+  → dev_machines.json 등록 PC 여부 확인
+  ├── 등록 PC: 자동 로그인 (인증 전체 skip)
   └── 일반 PC:
       → 1단계 VPN 접속 인증
-      → 2단계 팀원 인증: GitHub ID + PAT
-      → PAT 소유 GitHub ID 확인
-      → nvc_security users.json 로드
-      → users.json의 github_username 등록 여부 확인
-      → bcrypt 검증
-      → 로그인 사용자 github_username과 PAT GitHub ID 비교
-      → TOTP 등록 또는 인증
+      → 2단계 팀원 인증: GitHub ID + PAT 소유 확인
+      → 3단계 로그인: ID / 비밀번호
+      → 4단계 NAS SSH 인증
+      → 5단계 EFG SSH 인증
+      → 6단계 EFG API 인증
+      → 7단계 AP SSH 인증
       → 메인 화면 표시
+```
+
+로그인 성공 시 자동 처리:
+
+```text
+_auto_sync_credentials()
+  → Keychain에서 NAS/EFG/AP 비밀번호 조회
+  → 없으면 credentials.json 복호화 → Keychain 복원
+  → 세션 캐시 (_pw_session_cache) 및 _ap_ssh_password 저장
+  → TOTP 등록 팀원 전체에 대해 credentials.json 갱신 (관리자만)
+```
+
+TOTP 등록 완료 시 자동 처리:
+
+```text
+_add_user_to_credentials()
+  → 세션 캐시의 NAS/EFG/AP/EFG API 비밀번호를
+    신규 사용자의 TOTP secret으로 암호화
+  → 기존 credentials.json에 해당 사용자 항목 추가
+```
+
+비밀번호 해결 흐름 (`_resolve_password`):
+
+```text
+1. 세션 캐시 (_pw_session_cache)
+2. Windows Keychain
+3. nvc_security/credentials.json 복호화 → Keychain 복원
+4. 없으면 None (팝업 없음)
 ```
 
 인증 원본 기준:
 
 | 순서 | 위치 |
 |------|------|
-| 1 | `newvisionchurch/nvc_security:nethub/users.json` |
+| 1 | `newvisionchurch/nvc_security:nethub/auth/users.json` |
 | 2 | NAS SFTP 경로 |
-| 3 | `source/config/users.json` |
-
-관리자 계정의 `password_hash`와 `totp_secret`은 관리자 등록 PC가 아닌 로컬 백업에서 제거합니다.
-
-GitHub PAT는 Windows Keychain에 저장합니다.
-시작 인증에서 GitHub 토큰이 없거나 `nvc_security` 로드에 실패하면 사용자는 시작 화면의 `GitHub PAT 입력` 버튼으로 본인 GitHub ID와 PAT를 입력합니다.
-저장 직후 GitHub 계정 확인, `nvc_security` 접근 확인, `users.json`의 팀원 등록 여부를 확인하고 인증 캐시를 초기화한 뒤 인증 확인을 다시 실행합니다.
-로그인 화면은 개인 인증만 처리하며 PAT를 직접 받지 않습니다.
-사용자 데이터에는 `github_username`을 저장하고, 로그인 후 현재 PAT의 GitHub ID와 로그인 사용자에게 등록된 GitHub ID가 일치해야 합니다.
+| 3 | `source/config/users.json` (로컬 백업) |
 
 ## GitHub 연동
 
 | 데이터 | 저장소/파일 |
 |--------|-------------|
-| 사용자 | `newvisionchurch/nvc_security:nethub/users.json` |
+| 사용자 | `newvisionchurch/nvc_security:nethub/auth/users.json` |
+| SSH 접속 정보 | `newvisionchurch/nvc_security:nethub/auth/ssh_targets.json` |
+| 팀 공유 비밀번호 | `newvisionchurch/nvc_security:nethub/auth/credentials.json` |
 | AP Reset 예약 | `newvisionchurch/nvc_security:ap_reset_schedule.json` |
 | 팀원 게시판 | `newvisionchurch/nvc_security:nethub/feedback.json` |
 | 관리자 게시판 | `newvisionchurch/nvc_security:nethub/admin_notes.json` |
 
 GitHub PAT는 Windows Keychain에 저장합니다.
+
+## credentials.json 구조
+
+팀 공유 접속 비밀번호(NAS/EFG/AP SSH, EFG API Key)를 팀원별로 TOTP secret으로 개별 암호화하여 저장합니다.
+팀원은 본인의 TOTP secret으로만 복호화할 수 있습니다.
+
+```json
+{
+  "nas":     { "<username>": { "salt": "...", "token": "..." }, ... },
+  "efg":     { "<username>": { "salt": "...", "token": "..." }, ... },
+  "ap":      { "<username>": { "salt": "...", "token": "..." }, ... },
+  "efg_api": { "<username>": { "salt": "...", "token": "..." }, ... }
+}
+```
+
+사용자 추가 트리거:
+- **비밀번호 변경 시**: 관리자가 보안 설정 탭에서 저장 → 전체 TOTP 등록 사용자 재암호화
+- **TOTP 등록 완료 시**: 신규 사용자 항목 자동 추가 (`_add_user_to_credentials`)
 
 ## 주요 설정
 
@@ -281,8 +348,11 @@ GitHub PAT는 Windows Keychain에 저장합니다.
 |----|------|
 | `workspace_root_windows` | 로컬 런타임 루트 |
 | `md_base_path` | NVC NetHub 문서 버튼이 읽는 공개 MD 경로 |
+| `auth.github_org` | 인증 데이터 조직 |
 | `auth.github_repo` | 인증 데이터 저장소 |
 | `auth.github_file` | 사용자 파일 경로 |
+| `auth.github_ssh_targets_file` | SSH 접속 정보 파일 경로 |
+| `auth.github_credentials_file` | 팀 공유 비밀번호 파일 경로 |
 | `nas_sync.remote_output_root` | NAS JSONL 출력 루트 |
 | `nas_sync.auto_record_today_after_startup_sync` | 시작 NAS 동기화 후 오늘 Record 생성 여부 |
 | `nas_sync.record_stable_confirm_count` | Log signature 안정 확인 횟수 |
@@ -306,8 +376,9 @@ GitHub PAT는 Windows Keychain에 저장합니다.
 | `source/config/app_config.json` | 앱 설정 | 포함 |
 | `source/config/ap_inventory.json` | AP 인벤토리 | 포함 |
 | `source/config/ssh_targets.example.json` | SSH 예제 | 포함 |
+| `source/config/dev_machines.json` | 개발자 PC 등록 | 포함 (민감 데이터 아님) |
 | `source/config/users.json` | 사용자 계정 로컬 백업 | 제외 |
-| `source/config/ssh_targets.json` | 실제 SSH 접속 정보 | 제외 |
+| `source/config/ssh_targets.json` | 실제 SSH 접속 정보 (로그인 시 자동 로드) | 제외 |
 | `source/config/credentials.enc` | 암호화 자격증명 | 제외 |
 
 ## AP 인벤토리

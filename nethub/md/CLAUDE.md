@@ -103,8 +103,17 @@ nvc_nethub/
 - Python/Tkinter 기반 로컬 관리 도구입니다.
 - 기능 변경은 안정적인 작은 단위로 진행합니다.
 - 사용자 계정과 SSH 접속 정보는 Git에 포함하지 않습니다.
-- 실제 인증 원본은 `newvisionchurch/nvc_security`의 `nethub/users.json` 기준입니다.
+- 실제 인증 원본은 `newvisionchurch/nvc_security`의 `nethub/auth/users.json` 기준입니다.
 - 역할명은 `admin`, `manager`, `member`, `guest` 기준입니다.
+
+### 인증 원칙
+
+- **인증 단계는 admin 포함 모든 사용자 100% 동일**: VPN → 팀원 인증(PAT) → 로그인(ID/PW+OTP) → SSH 인증
+- **개발자 모드만 예외**: `dev_machines.json` 등록 PC는 인증 전체 skip
+- admin도 인증 단계에서 특권 없음 — 로그인 후 `can_manage_users` 권한으로만 구분
+- **로그인 후 관리자 전용 기능**: 설정 → 보안 탭, 사용자 탭 (nvc_security 관리)
+- **인증 데이터는 메모리에만**: users/credentials/ssh_targets는 세션 중 메모리 전용, 종료 시 삭제
+- dev_machines.json만 로컬 파일로 유지 (자동 로그인 설정, 민감 데이터 아님)
 
 ### ELK
 
