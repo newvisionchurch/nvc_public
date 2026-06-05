@@ -26,7 +26,11 @@
 ### 기타
 - 시작 시 빈 화면 제거 — 초기화 완료 후 창 표시, 로딩 중 메시지
 - EFG SSH / API 진단 결과 메시지 창 연동
-- scripts/backup.ps1 추가 — nvc_security AES-256 암호화 백업
+- 상단 변경 이력 버튼 추가 — docs/revision.md 팝업
+- 문서 팝업 크기 확대 (1100×820)
+- backup.ps1 개선 — 버전 자동 감지, nvc_nethub + nvc_security 동시 백업, 기존 버전 자동 삭제
+- build.ps1 개선 — 기존 버전 자동 삭제 후 재빌드
+- CLAUDE.md `all` 명령 워크플로 추가 — mdreport → mdupdate → push → sync → build → baseline → backup
 
 ---
 
