@@ -4,6 +4,37 @@
 
 ---
 
+## v0.7  (2026-06-05)
+
+### macOS 지원
+
+- 단일 인스턴스 잠금 — Windows(named mutex) / macOS·Linux(flock) 분기 처리
+- `ctypes.windll` 직접 참조 제거 — macOS에서 크래시 없이 동작
+- `requirements.txt` — `cryptography` 패키지 명시 추가 (Fernet 암호화 의존성)
+- `app_config.json` — `ui_font.family` 기본값 제거, OS별 자동 감지 적용
+- UI 텍스트 하드코딩 Windows 경로 제거 — 실제 workspace 경로 동적 참조
+- `scripts/run.sh` 추가 — macOS/Linux용 실행 스크립트 (venv 자동 생성, tkinter 설치 안내, NAS known_hosts 자동 등록, 교회 내부망 설정 자동 적용)
+- `docs/사용자_안내.md` — macOS 설치 및 실행 방법 추가
+- `nvc_mac` 저장소 추가 — macOS 빌드 워크스페이스 (임시 검증 및 빌드용)
+- `scripts/macsync.ps1` 추가 — Win 소스를 nvc_mac으로 동기화
+- `scripts/build_mac.sh` 추가 — macOS PyInstaller 빌드 스크립트
+- `build.ps1` — SSH로 Mac 자동 빌드, SCP로 결과물 수집, nvc_release 통합
+
+### UI 개선
+
+- AP Reset 선택 표시 — 선택된 행 텍스트 빨강 굵게 (배경색은 점수 분류 유지)
+- AP Reset 선택 카운트 카드 — 0개일 때 흰색, 1개 이상 주황 배경으로 강조
+- 메시지 창 하단 연결 상태바 추가 — AP SSH / NAS SSH / EFG SSH / EFG API / ELK 조회 성공/실패 칩 표시, 모두 성공 시 `✓ Setup Done` 표시
+- ELK 그래프 팝업 — macOS 호환성 수정 (`-toolwindow` Windows 전용 분기)
+
+### 설정 / 구조 개선
+
+- MD 문서(매뉴얼 등) — 로컬 경로 의존성 제거, `nvc_public` GitHub raw URL로 직접 fetch
+- 절대 경로 완전 제거 — `app_config.json`, `main.py` fallback 모두 상대/동적 경로로 변경
+- NAS SSH 진단 — 연결 현황 탭에서 관리자 탭 → 보안 설정으로 이동
+
+---
+
 ## v0.6  (2026-06-04)
 
 ### 인증 및 보안

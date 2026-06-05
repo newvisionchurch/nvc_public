@@ -55,12 +55,13 @@ MD 업데이트 운영 순서:
 | 2 | mdupdate | 리포트를 읽고 실제 MD 파일 업데이트 |
 | 3 | push all | 4개 저장소 변경사항 커밋 및 push |
 | 4 | `.\scripts\sync.ps1` | public MD 동기화 (nvc_public) |
-| 5 | `.\scripts\build.ps1` | 배포 패키지 생성 및 nvc_release push |
-| 6 | `.\scripts\mdreport.ps1 -MarkBaseline` | 현재 HEAD를 다음 MD 기준점으로 저장 |
-| 7 | `.\scripts\backup.ps1 -Password "..."` | nvc_security + nvc_nethub 암호화 백업 (비밀번호 확인 후 실행) |
+| 5 | `.\scripts\build.ps1` | Windows exe 빌드 + SSH로 Mac 빌드 + nvc_release 통합 push |
+| 6 | `git tag v{버전} && git push origin v{버전}` | 현재 버전으로 git tag 생성 및 push (버전은 GUI_VERSION에서 읽음) |
+| 7 | `.\scripts\mdreport.ps1 -MarkBaseline` | 현재 HEAD를 다음 MD 기준점으로 저장 |
+| 8 | `.\scripts\backup.ps1` | nvc_security + nvc_nethub 암호화 백업 (비밀번호 자동) |
 
-> backup 단계는 비밀번호가 필요하므로 반드시 사용자에게 비밀번호를 확인합니다.
-> 사용자가 `all`과 함께 비밀번호를 제공한 경우 자동으로 진행합니다.
+> tag 단계에서 이미 같은 버전 태그가 존재하면 건너뜁니다.
+> build.ps1은 SSH로 교회 Mac(192.168.15.171)에 자동 접속해 Mac 빌드를 실행하고 SCP로 결과물을 수집합니다.
 
 ## Push 규칙
 
@@ -84,6 +85,47 @@ MD 업데이트 운영 순서:
 | `C:\Projects\nvc_backup\nvc_nethub\` | `scripts/backup.ps1` 결과물 저장 위치 |
 
 `nvc_backup`은 git init이 되어 있지 않은 순수 로컬 폴더입니다. push 대상에 포함하지 않습니다.
+
+## Mac 빌드 워크플로
+
+Mac 빌드는 `nvc_mac` 저장소를 통해 별도로 관리합니다.
+
+| 저장소 | 경로 | Remote |
+|--------|------|--------|
+| `nvc_mac` | `C:\Projects\nvc_mac` | `newvisionchurch/nvc_mac` (private) |
+
+### Win → Mac 소스 동기화
+
+소스 변경 후 Mac에 반영할 때 실행합니다.
+
+```powershell
+.\scripts\macsync.ps1
+```
+
+동기화 대상: `source/` 전체, `scripts/run.sh`
+동기화 후 `nvc_mac`에서 커밋/push → Mac에서 `git pull`
+
+### Mac 빌드 순서
+
+1. Win에서 `.\scripts\macsync.ps1` 실행
+2. `nvc_mac` 커밋/push
+3. Mac에서 `git pull`
+4. Mac VS Code에서 `bash scripts/run.sh` 로 동작 검증
+5. Mac에서 `bash scripts/build_mac.sh` 로 PyInstaller 빌드
+6. Mac에서 `dist/NVC_NetHub_X.X_mac` 실행 파일 검증
+7. Mac에서 빌드 결과물 `nvc_mac` push
+8. Win에서 `nvc_release`에 Windows + Mac 바이너리 통합 릴리즈
+
+### macsync 후 nvc_mac push
+
+`macsync.ps1` 실행 후 `nvc_mac` 변경사항을 push할 때는 `push all` 대상에 포함되지 않으므로 별도로 처리합니다.
+
+```powershell
+cd C:\Projects\nvc_mac
+git add .
+git commit -m "sync: v{버전} 소스 반영"
+git push origin main
+```
 
 ## 프로젝트 구조
 
