@@ -185,8 +185,20 @@ AP Status의 `ELK Stuck Count`는 이 Record를 읽어 빠르게 `ELK Stuck` 컬
 | 빈 Count만 | 선택 범위에서 Record가 없는 날짜만 Count |
 | 다시 Count | 선택 범위의 Record를 강제로 다시 계산 |
 | 전체 Record 삭제 | 저장된 ELK Stuck Record 전체 삭제 |
+| 그래프 | 날짜별 AP ELK Stuck 추이 라인 그래프 팝업 |
 
 Record 목록에는 AP별 `누적`, `평균`, `최고` 요약 행이 먼저 표시되고, 그 아래에 최근 날짜부터 날짜별 Count가 표시됩니다.
+값의 크기에 따라 행 색상이 적용됩니다 — 회색(0), 파랑(낮음), 노랑(중간), 빨강(높음).
+
+#### ELK Stuck 그래프
+
+`그래프` 버튼을 누르면 날짜별 AP ELK Stuck 추이 팝업이 열립니다.
+
+- X축: 날짜, Y축: ELK Stuck Count
+- AP별 고유 색상 라인으로 추이 표시
+- 오른쪽 패널에서 AP 클릭으로 표시/숨김 선택, 전체/해제 버튼 제공
+- Y축 최소/최대 값을 직접 지정하거나 자동 범위로 설정 가능
+- 라인 위에 마우스를 올리면 AP ID, 이름, 값이 툴팁으로 표시
 
 ### ELK Stuck Count 집계
 
@@ -233,16 +245,28 @@ NAS Sync 설정과 UniFi API 연결 상태를 확인합니다.
 
 | 옵션 | 동작 |
 |------|------|
+| AP 전체 조회 | 시작 후 AP SSH mca-dump 전체 조회 |
 | ELK Stuck Count 집계 | 시작 후 AP Status의 `ELK Stuck` 값을 Record 기준으로 반영 |
 | 동기화 후 집계 | ELK Count 전에 NAS 오늘 Log 동기화를 먼저 수행 |
 | 시작 시 NAS 1일 자동 동기화 후 오늘 Record | 시작 동기화 후 오늘 날짜 Record 생성 |
 | Record 확정 확인 횟수 | 같은 Log 상태가 몇 번 확인되면 과거 날짜 Record를 안정 상태로 볼지 설정 |
-| 동기화 탭 왼쪽 비율 | `NAS ELK Sync`와 `ELK Stuck Record` 패널 분할 비율 조정 |
-| 메시지창 | 시작 자동 실행 로그를 통합 메시지 창에 표시 |
+| 동기화 탭 왼쪽 비율 | `NAS ELK Sync`와 `ELK Stuck Record` 패널 분할 비율 (3~35%) |
+| EFG SSH 진단 | 시작 후 EFG SSH 진단 자동 실행 |
+| EFG API 전체 Preset 조회 | 시작 후 UniFi API 전체 Preset 자동 조회 |
+| 시작 시 메시지 창 열기 | 시작 자동 실행 로그를 좌(AP 조회) / 우(NAS·EFG·ELK) 분할 메시지 창에 표시 |
 | 시작 작업 완료 후 자동 닫기 | 자동 실행이 모두 끝난 뒤 지정 초 후 메시지 창 닫기 |
 
 `ELK Stuck Count 집계`와 `동기화 후 집계`가 모두 켜져 있으면 실행 순서는 오늘 Log 동기화, 오늘 Record 생성, AP Status 집계입니다.
 AP 전체 조회도 켜져 있으면 AP별 진행 메시지는 `AP 조회 중... AP_NAME (n/29)` 형식으로 표시됩니다.
+
+#### 시작 메시지 창
+
+시작 자동 실행 진행 상황을 실시간으로 확인합니다.
+
+- 왼쪽 패널: AP 조회 진행 현황
+- 오른쪽 패널: NAS 동기화, EFG 진단, EFG API, ELK Count 결과
+- 각 항목별 색상 구분: AP(파랑), NAS(주황), EFG(청록), API(자홍), ELK(초록), 시작(보라)
+- 상단 `메시지` 버튼으로 언제든 다시 열 수 있습니다.
 
 ## 게시판
 

@@ -261,19 +261,22 @@ NAS ELK Sync
 
 ```text
 NVC NetHub 시작
-  → VPN 확인
   → dev_machines.json 등록 PC 여부 확인
-  ├── 등록 PC: 자동 로그인 (인증 전체 skip)
+  ├── 등록 PC: 개발자 모드 스플래시(2초) → 메인 화면
+  │            (_auto_sync_credentials + _load_ssh_targets_from_security 실행)
   └── 일반 PC:
       → 1단계 VPN 접속 인증
       → 2단계 팀원 인증: GitHub ID + PAT 소유 확인
-      → 3단계 로그인: ID / 비밀번호
-      → 4단계 NAS SSH 인증
+      → 3단계 로그인: ID / 비밀번호 + OTP
+      → 4단계 NAS SSH 인증 (echo ok — 성공 시 startup sync skip 플래그 설정)
       → 5단계 EFG SSH 인증
       → 6단계 EFG API 인증
       → 7단계 AP SSH 인증
       → 메인 화면 표시
 ```
+
+NAS SSH 중복 방지: 로그인 4단계에서 NAS SSH가 성공하면 `_startup_auto_sync_done = True`로 설정되어
+5초 후 `_auto_sync_on_startup`이 skip됩니다. NAS SSH는 시작 시 1회만 실행됩니다.
 
 로그인 성공 시 자동 처리:
 
