@@ -26,7 +26,7 @@
 ### 기타
 - 시작 시 빈 화면 제거 — 초기화 완료 후 창 표시, 로딩 중 메시지
 - EFG SSH / API 진단 결과 메시지 창 연동
-- `scripts/backup.ps1` 추가 — nvc_security AES-256 암호화 백업
+- scripts/backup.ps1 추가 — nvc_security AES-256 암호화 백업
 
 ---
 
