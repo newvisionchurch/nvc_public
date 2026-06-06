@@ -376,12 +376,13 @@ GitHub PAT는 Windows Keychain에 저장합니다.
 
 | 파일 | 내용 | Git |
 |------|------|-----|
-| `source/config/app_config.json` | 앱 설정 | 포함 |
-| `source/config/ap_inventory.json` | AP 인벤토리 | 포함 |
-| `source/config/ssh_targets.example.json` | SSH 예제 | 포함 |
-| `source/config/dev_machines.json` | 개발자 PC 등록 | 포함 (민감 데이터 아님) |
+| `source/config/app_config.dist.json` | 배포용 기본 설정 템플릿 — 빌드 시 `app_config.json`으로 복사 | 포함 |
+| `source/config/app_config.json` | 사용자 런타임 설정 — 설정 탭 저장 시 갱신, 없으면 dist에서 자동 복원 | 제외 |
+| `source/config/ap_inventory.json` | AP 인벤토리 — 없으면 빈 목록으로 시작 | 포함 |
+| `source/config/ssh_targets.example.json` | SSH 설정 구조 참고용 샘플 | 포함 |
+| `source/config/dev_machines.json` | 개발자 PC 등록 — 인증 skip 대상 | 포함 (민감 데이터 아님) |
 | `source/config/users.json` | 사용자 계정 로컬 백업 | 제외 |
-| `source/config/ssh_targets.json` | 실제 SSH 접속 정보 (로그인 시 자동 로드) | 제외 |
+| `source/config/ssh_targets.json` | 실제 SSH 접속 정보 — 로그인 시 자동 생성, 종료 시 삭제 | 제외 |
 | `source/config/credentials.enc` | 암호화 자격증명 | 제외 |
 
 ## AP 인벤토리

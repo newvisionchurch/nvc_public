@@ -32,6 +32,10 @@
 - MD 문서(매뉴얼 등) — 로컬 경로 의존성 제거, `nvc_public` GitHub raw URL로 직접 fetch
 - 절대 경로 완전 제거 — `app_config.json`, `main.py` fallback 모두 상대/동적 경로로 변경
 - NAS SSH 진단 — 연결 현황 탭에서 관리자 탭 → 보안 설정으로 이동
+- 기본 작업 폴더명 변경 — `C:\NVC_Network_GUI` → `C:\NVC_Network_NetHub`
+- `app_config.json` 자동 복원 — 파일 삭제 시 `app_config.dist.json`에서 자동 재생성
+- `ap_inventory.json` 삭제 내성 — 파일 없을 때 빈 목록으로 안전 시작
+- 설정 자동화 탭 기본값 변경 — AP 전체 조회, ELK Stuck Count, 동기화 후 집계, EFG SSH/API 기본 ON
 
 ---
 
