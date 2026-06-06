@@ -38,6 +38,7 @@
 - 설정 자동화 탭 기본값 변경 — AP 전체 조회, ELK Stuck Count, 동기화 후 집계, EFG SSH/API 기본 ON (`app_config.dist.json` 반영)
 - 기본값 관리 원칙 확립 — `app_config.dist.json`이 단일 기본값 원본, 빌드 시 `app_config.json`으로 복사
 - 시작 메시지 창 NAS 인증 로그 표시 — 로그인 단계 NAS SSH 인증 결과(성공/실패)를 저장해 시작 메시지 창에 출력
+- AP Status 온라인/오프라인 카드 수정 — SSH 조회 완료 시 reachable 기준으로 카드 즉시 업데이트
 
 ---
 
