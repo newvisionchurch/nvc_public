@@ -59,6 +59,7 @@ MD 업데이트 운영 순서:
 | 6 | `git tag v{버전} && git push origin v{버전}` | 현재 버전으로 git tag 생성 및 push (버전은 GUI_VERSION에서 읽음) |
 | 7 | `.\scripts\mdreport.ps1 -MarkBaseline` | 현재 HEAD를 다음 MD 기준점으로 저장 |
 | 8 | `.\scripts\backup.ps1` | nvc_security + nvc_nethub 암호화 백업 (비밀번호 자동) |
+| 9 | `.\scripts\copy.ps1` | 최신 릴리즈를 nvc_run에 복사/압축해제, nvc_mac run 업데이트 및 push |
 
 > tag 단계에서 이미 같은 버전 태그가 존재하면 건너뜁니다.
 > build.ps1은 SSH로 교회 Mac(192.168.15.171)에 자동 접속해 Mac 빌드를 실행하고 SCP로 결과물을 수집합니다.
