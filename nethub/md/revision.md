@@ -4,6 +4,25 @@
 
 ---
 
+## v0.8  (2026-06-09)
+
+### 버그 수정
+
+- NAS Log 동기화 — `auto_add_host_key` 기본값 `false` → `true` 변경 (`app_config.dist.json`) — known_hosts 미등록 PC에서 동기화 실패 문제 해결
+- TOTP 초기화 — Git 미설치 PC에서 Windows 오류 팝업 발생 문제 수정 (`auth.py` — `shutil.which` 사전 확인)
+- OTP 첫 등록 완료 시 credentials.json 자동 추가 누락 수정 (`main.py` — `_add_user_to_credentials` 호출 추가)
+- `macsync.ps1` / `build.ps1` — Mac용 `run.sh` 생성 시 CRLF → LF 강제 적용
+
+### UI 개선
+
+- 사용자 관리 테이블 — `PAT 인증` 컬럼 제거 (관리자 화면에서 확인 불가 구조)
+- 사용자 관리 테이블 — 모든 컬럼 중앙 정렬 적용
+- 사용자 관리 테이블 — `2FA` 컬럼명 → `OTP`로 변경
+- 사용자 관리 버튼 — `TOTP 초기화` → `OTP 초기화`로 변경
+- 로그인 성공 시 `last_login` 자동 저장 — 사용자 관리 테이블에 마지막 로그인 시각 표시
+
+---
+
 ## v0.7  (2026-06-05)
 
 ### macOS 지원

@@ -87,7 +87,7 @@ NetworkGuiApp (source/main.py — 13,400+ 줄, 단일 클래스)
 
 | 서브탭 | 빌드 함수 | 주요 내용 |
 |--------|----------|----------|
-| 사용자 관리 | `_build_admin_tab` 내 | 계정/권한/TOTP/개발자 PC 관리 |
+| 사용자 관리 | `_build_admin_tab` 내 | 계정/권한/OTP/개발자 PC 관리 |
 | 보안 설정 | `_build_credentials_manager_section` | 팀 공유 비밀번호 (NAS/EFG/AP/EFG API) |
 
 ### AP 상세 팝업 탭 (별도 팝업)
