@@ -257,7 +257,7 @@ NAS ELK Sync
 
 ## 인증 설계
 
-모든 사용자(admin 포함)가 동일한 7단계 인증을 거칩니다. 개발자 등록 PC만 예외로 전체 skip합니다.
+모든 사용자(admin 포함)가 동일한 8단계 인증을 거칩니다. 개발자 등록 PC만 예외로 전체 skip합니다.
 
 ```text
 NVC NetHub 시작
@@ -268,15 +268,16 @@ NVC NetHub 시작
       → 1단계 VPN 접속 인증
       → 2단계 팀원 인증: GitHub ID + PAT 소유 확인
       → 3단계 로그인: ID / 비밀번호 + OTP
-      → 4단계 NAS SSH 인증 (echo ok — 성공 시 startup sync skip 플래그 설정)
-      → 5단계 EFG SSH 인증
-      → 6단계 EFG API 인증
-      → 7단계 AP SSH 인증
+      → 4단계 관리자 인증: 접속 비밀번호 등록 여부 확인
+      → 5단계 NAS SSH 인증
+      → 6단계 EFG SSH 인증
+      → 7단계 EFG API 인증
+      → 8단계 AP SSH 인증
       → 메인 화면 표시
 ```
 
-NAS SSH 중복 방지: 로그인 4단계에서 NAS SSH가 성공하면 `_startup_auto_sync_done = True`로 설정되어
-5초 후 `_auto_sync_on_startup`이 skip됩니다. NAS SSH는 시작 시 1회만 실행됩니다.
+4단계에서 접속 비밀번호 미등록 확인: 신규 팀원은 관리자가 비밀번호를 등록하기 전까지
+"접속 비밀번호가 아직 등록되지 않았습니다" 안내 후 로그인 화면으로 복귀합니다.
 
 로그인 성공 시 자동 처리:
 

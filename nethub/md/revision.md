@@ -4,6 +4,29 @@
 
 ---
 
+## v0.9  (2026-06-14)
+
+### 기능 개선
+
+- 시작 순서 엔진 — NAS 의존 체인(NAS → Record → ELK Count)과 독립 실행(AP 조회, EFG SSH/API, 메시지 창)을 분리하여 v0.8 호환성 복원
+- `elk_sync_first` 의미 보존 — `false`: ELK Count 즉시 독립 실행 / `true`: NAS 체인 완료 후 실행
+- 8단계 인증 — 기존 7단계에서 4단계 "관리자 인증(접속 비밀번호 등록 여부 확인)" 추가
+
+### 안정성 수정
+
+- NAS 동기화 실패(`Log 동기화 중지됨`, `Log 동기화를 건너뜁니다`) 시에도 시작 체인 정상 중단
+- NAS 비밀번호 미설정 조기 종료 시 모든 콜백 해제, 메시지 창 및 score_refresh pending 해제
+- `elk_sync_first=false` 환경에서 ELK Count가 NAS 결과에 무관하게 독립 실행되도록 수정
+- NAS 실패 시 메시지 창 `elk_count` pending과 score_refresh auto-off pending 모두 해제
+
+### 스크립트 개선
+
+- `scripts/run_mac_dist.sh` 추가 — macOS 배포 패키지 전용 실행 스크립트 (SCRIPT_DIR 기준)
+- `scripts/run.sh` 개선 — `.venv` 우선 재사용, 버전·tkinter 재확인 후 신규 생성 분기
+- `scripts/build.ps1` — 배포용 `run.sh`를 `run_mac_dist.sh`에서 읽어 생성 (하드코딩 제거)
+
+---
+
 ## v0.8  (2026-06-09)
 
 ### 버그 수정

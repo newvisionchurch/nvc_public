@@ -84,7 +84,7 @@ runtime/
 2. 같은 화면의 `ELK Stuck Record`에서 날짜별 Record를 생성합니다.
 3. AP Status의 `ELK Stuck Count`에서 선택 날짜 범위와 집계 방식(`누적`, `최고`, `평균`)으로 `ELK Stuck` 컬럼을 갱신합니다.
 
-시작 자동 실행에서 `동기화 후 집계`가 켜져 있으면 오늘 Log 동기화, 오늘 Record 생성, AP Status 집계가 순서대로 실행됩니다.
+시작 자동 실행에서 `elk_sync_first`(동기화 후 집계)가 켜져 있으면 오늘 Log 동기화, 오늘 Record 생성, AP Status 집계가 순서대로 실행됩니다. 꺼져 있으면 ELK Count가 NAS 동기화와 무관하게 독립 실행됩니다. AP 조회와 EFG 진단은 NAS 동기화 결과와 무관하게 항상 독립 실행됩니다.
 
 ## 보안 원칙
 

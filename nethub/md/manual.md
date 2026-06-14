@@ -37,13 +37,16 @@ Source 패키지는 프로젝트 루트에서 실행합니다.
 
 ### 로그인
 
-1. VPN을 먼저 연결합니다.
-2. 시작 인증 화면에서 `1단계 VPN 접속 인증`을 통과합니다.
-3. `2단계 팀원 인증 (GitHub ID & PAT)`에서 본인 GitHub ID와 PAT를 입력합니다.
-4. 앱이 PAT의 GitHub ID, `nvc_security` 접근 권한, NetHub 사용자 정보의 GitHub ID 등록 여부를 확인합니다.
-5. 팀원 인증이 끝나면 NetHub 계정 ID와 비밀번호를 입력합니다.
-6. 로그인한 계정의 등록 GitHub ID와 현재 PAT의 GitHub ID가 같아야 개인 인증이 통과됩니다.
-7. 최초 로그인 시 OTP QR 코드를 등록하고, 이후 로그인 시 OTP 앱의 6자리 코드를 입력합니다.
+총 8단계 인증을 순서대로 통과합니다.
+
+1. **1단계 VPN 접속 인증** — VPN을 먼저 연결합니다.
+2. **2단계 팀원 인증 (GitHub ID & PAT)** — 본인 GitHub ID와 PAT를 입력합니다. 앱이 PAT의 GitHub ID, `nvc_security` 접근 권한, NetHub 사용자 정보의 GitHub ID 등록 여부를 확인합니다.
+3. **3단계 로그인 (ID/PW + OTP)** — NetHub 계정 ID와 비밀번호를 입력합니다. 최초 로그인 시 OTP QR 코드를 등록하고, 이후 로그인 시 OTP 앱의 6자리 코드를 입력합니다.
+4. **4단계 관리자 인증** — 접속 비밀번호(NAS/EFG/AP) 등록 여부를 확인합니다. 미등록 시 이후 SSH/API 인증을 건너뜁니다.
+5. **5단계 NAS SSH 인증** — NAS SSH 접속을 검증합니다.
+6. **6단계 EFG SSH 인증** — EFG SSH 접속을 검증합니다.
+7. **7단계 EFG API 인증** — EFG UniFi Controller API 접속을 검증합니다.
+8. **8단계 AP SSH 인증** — 대표 AP SSH 접속을 검증합니다.
 
 PAT는 로그인 화면이 아니라 시작 인증 화면에서만 입력합니다.
 GitHub ID가 등록되어 있지 않거나 PAT의 GitHub ID와 로그인 사용자의 GitHub ID가 다르면 로그인이 실패합니다.
